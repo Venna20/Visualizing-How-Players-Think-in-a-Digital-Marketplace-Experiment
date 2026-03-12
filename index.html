@@ -2602,23 +2602,21 @@ const hierarchy=buildH(DATA);const angles=compA(hierarchy);renderLegend();render
 
 <div class="hero">
   <h1>Visualizing How Players Think in a Digital Marketplace Experiment</h1>
-  <p class="lede">After four weeks of running a marketplace experiment in person, I had 161 sellers’ performance data and their own perception of how they played. This is about the chart I built to connect the two — and what it revealed.</p>
+  <p class="lede">We built 4 different simulated digital marketplaces, each testing the effect of staking or reputation on seller behaviour. I built a single chart to study how each variant performed across 4 sessions of experimentation — where each session refined the game slightly to help players engage with it better.</p>
 </div>
 
 <article>
 
   <p>The fun thing about watching people play a game you helped build is that you get a fresh perspective you no longer have yourself. I would walk around the room between rounds, catching bits of conversation, watching decisions being made in real time. When the session ended and players filled out their exit surveys, I would sometimes find myself reading their responses as they wrote — small glimpses into how each person understood the game and their own performance.</p>
 
-  <p>The problem was that those opinions were too much to assess at once. 161 rows. A score, a strategy breakdown across the full game, and a free-text field where each seller described what they thought their strength was. The insights were in there — I just had no way to see a player’s performance and their own explanation of it at the same time. That disconnect is what motivated the chart.</p>
-
   <p>For the past several months I have been building and running experiments at the <strong>Platform Governance Lab</strong>, a research group focused on understanding how digital marketplaces work — and how they fail. The core question we are investigating: what mechanisms actually prevent fraud in online markets? To study this, we designed a marketplace simulation — a game where participants take on the role of sellers and buyers over multiple rounds. As a seller, each round you decide what quality product to list and whether to represent it honestly. The game mirrors the structure of real platforms like eBay or Amazon, but in a controlled environment where we can observe every decision.</p>
 
-  <p>We ran four versions of the market, varying two fraud-deterrence mechanisms: <strong>staking</strong> — where sellers escrow money alongside a listing, forfeiting it if caught misrepresenting their product — and <strong>reputation</strong>, the familiar system of reviews and ratings, with an added option to rebrand and re-enter with a fresh score. Every combination was tested across four weeks. After each session, players filled out a short exit survey describing their strategy and what they thought their strength was.</p>
+  <p>We ran four versions of the market, varying two fraud-deterrence mechanisms: <strong>staking</strong> — where sellers escrow money alongside a listing, forfeiting it if caught misrepresenting their product — and <strong>reputation</strong>, the familiar system of reviews and ratings, with an added option to rebrand and re-enter with a fresh score. Every combination was tested across four weeks, with small refinements to the game design between each session to give players more flexibility and help them engage more meaningfully with the mechanisms.</p>
 
   <span class="section-tag">The Problem</span>
-  <h2>The challenge: analyzing different aspects of performance in one visual.</h2>
+  <h2>We needed to compare fraud rates across 4 market variants, 4 sessions, and 161 individual sellers — all at once. And for each of those 161 people, we also needed to understand how they performed, what strategy they relied on, and whether they actually understood the game they were playing. Standard charts force you to pick one dimension. We needed all of them.</h2>
 
-  <p>Each seller had a market variant, a week, a final score, a breakdown of how often they chose each of four strategies, and a sentence or two describing their approach. These are genuinely different types of information — categorical, temporal, numeric, proportional, qualitative — and connecting them in a conventional chart is nearly impossible without losing something.</p>
+  <p>Each seller had the option to produce any of the following strategies within their provided budget:</p>
 
   <div class="pills">
     <div class="pill"><div class="dot" style="background:#b62451"></div> Cheating</div>
@@ -2626,21 +2624,28 @@ const hierarchy=buildH(DATA);const angles=compA(hierarchy);renderLegend();render
     <div class="pill"><div class="dot" style="background:#84ceeb"></div> Honest Low Quality</div>
     <div class="pill"><div class="dot" style="background:#b35edc"></div> Irrational</div>
   </div>
-  <p style="font-size:0.88rem; color:var(--muted); line-height:1.75; margin-top:-8px;"><strong style="color:var(--text); font-weight:500;">Cheating</strong> — advertising high quality but producing low quality. <strong style="color:var(--text); font-weight:500;">Honest High</strong> — advertising high quality and producing high quality. <strong style="color:var(--text); font-weight:500;">Honest Low</strong> — advertising low quality and producing low quality. <strong style="color:var(--text); font-weight:500;">Irrational</strong> — advertising low quality but producing high quality, leaving profit on the table for no clear reason.</p>
-
-  <p>I could make a bar chart of strategy proportions. I could make a scatter plot of score versus cheating rate. But none of those would let me answer the question I actually cared about: <em>why was this particular person playing this way?</em> For that, I needed the score, the strategy, the market context, and the seller’s own words — all at once, for all 161 people.</p>
+  <ul style="font-size:0.92rem; color:var(--text); line-height:1.9; margin: 4px 0 28px 18px;">
+    <li><strong>Cheating</strong> — advertise high quality, but produce low quality.</li>
+    <li><strong>Honest High</strong> — advertise high quality and produce high quality.</li>
+    <li><strong>Honest Low</strong> — advertise low quality and produce low quality.</li>
+    <li><strong>Irrational</strong> — advertise low quality but produce high quality — which ends up costing the seller money.</li>
+  </ul>
 
   <span class="section-tag">The Solution</span>
-  <h2>The approach: a nested sunburst that combines all five layers.</h2>
+  <h2>A nested sunburst that combines all five layers.</h2>
 
   <p>I built a nested sunburst — a circular chart organized from the outside in. The outer ring shows the market variant. Inside that, the week. Inside that, each individual seller as a wedge, with color layers showing their strategy proportions, sorted within each week by cheating proportion. Their final score sits in the gap between the seller wedges and the week ring.</p>
 
-  <p>The part that made it actually useful: hover over any seller’s wedge and everything else fades. The tooltip shows their score, their strategy breakdown, and — at the bottom, in italics — exactly what they wrote in the exit survey. Suddenly the data had a voice.</p>
+  <p>The part that made it actually useful: hover over any seller's wedge and everything else fades. The tooltip shows their player ID, their score, their strategy breakdown as a bar, and — at the bottom, in italics — exactly what they wrote in the exit survey. The chart answers all three questions simultaneously: you can read market-level patterns at a glance, track how strategy distributions shift across weeks, and drill into any individual to compare their data against their own explanation of it.</p>
 
   <span class="section-tag">The Observations</span>
-  <h2>What the visual revealed about how players actually behaved.</h2>
+  <h2>Patterns that only became visible once everything was in one place.</h2>
 
-  <p>Twenty minutes in, I had already grouped every player into one of four types — not by running a clustering algorithm, but simply by reading the visual:</p>
+  <p>Several things become immediately clear that would take significant effort to piece together from a bunch of separate tables. The <strong>No Staking · No Reputation</strong> quadrant is visually the most red across all four weeks — consistently the highest concentration of cheating in the dataset. When there is no financial penalty and no reputational cost, fraud is the dominant strategy. The <strong>Staking · No Reputation</strong> quadrant shows a notably different picture: cheating drops sharply, and the red is visually thinner and more scattered across weeks. Staking alone, without reputation, appears to be the stronger deterrent of the two.</p>
+
+  <p>The <strong>Staking · Reputation</strong> quadrant shows something more gradual: a visible shift across the four weeks, with later weeks — particularly week 4 — carrying more blue than red compared to the earlier sessions. This suggests that as the game design matured and players became more familiar with the mechanics, the combination of both mechanisms started to have a compounding effect on honest behaviour. The <strong>No Staking · Reputation</strong> quadrant is more mixed — reputation alone does not produce a clean pattern, and the presence of the rebrand option means some players were able to exploit it strategically, cheating and re-entering with a clean slate.</p>
+
+  <p>Twenty minutes with the chart was also enough to group every player into one of four types — not by running a clustering algorithm, but simply by reading the visual:</p>
 
   <div class="types">
     <div class="type-card">
@@ -2649,7 +2654,7 @@ const hierarchy=buildH(DATA);const angles=compA(hierarchy);renderLegend();render
     </div>
     <div class="type-card">
       <div class="tc-name">Confused</div>
-      <div class="tc-desc">High irrational proportions. The tooltips confirmed it — they genuinely didn’t understand the game.</div>
+      <div class="tc-desc">High irrational proportions. The tooltips confirmed it — they genuinely didn't understand the game.</div>
     </div>
     <div class="type-card">
       <div class="tc-name">Reputation Builders</div>
@@ -2661,13 +2666,13 @@ const hierarchy=buildH(DATA);const angles=compA(hierarchy);renderLegend();render
     </div>
   </div>
 
-  <p>Some of the individual reviews I found were genuinely worth pausing on. Here are a few that stood out:</p>
+  <p>Some of the individual responses were genuinely worth pausing on. Here are a few that stood out:</p>
 
   <div class="callout" style="margin-bottom:14px;">
     <div class="callout-label" style="color:var(--accent);">Stakes · Reputation — Week 3 · Score: 20</div>
     <p>“At first when I had no reputation, it was hard to get people to buy my products even when they were advertised as high quality. I felt like I had no power without the stake to convince buyers to purchase my products.”</p>
   </div>
-  <p>This player scored only 20 points — but their reasoning was the sharpest in the dataset. With 63% cheating and 37% honest-high, they were far from conservative. What makes the response remarkable is the articulation: at the start of a market, reputation is neutral and means nothing. Staking is the only credible signal available because it costs something. They felt that gap directly, and named it. The score doesn’t reflect the quality of the thinking.</p>
+  <p>This player scored only 20 points — but their reasoning was the sharpest in the dataset. With 63% cheating and 37% honest-high, they were far from conservative. What makes the response remarkable is the articulation: at the start of a market, reputation is neutral and means nothing. Staking is the only credible signal available because it costs something. They felt that gap directly, and named it. The score doesn't reflect the quality of the thinking.</p>
 
   <div class="callout" style="margin-bottom:14px;">
     <div class="callout-label" style="color:var(--accent);">No Stakes · Reputation — Week 4 · Score: 102</div>
@@ -2679,12 +2684,12 @@ const hierarchy=buildH(DATA);const angles=compA(hierarchy);renderLegend();render
     <div class="callout-label" style="color:var(--accent);">No Stakes · Reputation — Week 3 · Score: 26</div>
     <p>“My strength was being able to build up the reputation for the product.”</p>
   </div>
-  <p>A score of 26 with 42% cheating and 47% honest-high in a no-staking, reputation-only market. My guess at the strategy: produce honestly in the early rounds to build a good reputation, then cheat and exit — re-entering under a fresh brand name to reset the score and repeat the cycle. In a market with no staking, nothing stops that loop. The chart shows the pattern; the tooltip tells you what they thought they were doing.</p>
+  <p>A score of 26 with 42% cheating and 47% honest-high in a no-staking, reputation-only market. My interpretation: produce honestly in the early rounds to build a good reputation, then cheat and exit — re-entering under a fresh brand name to reset the score and repeat the cycle. In a market with no staking, nothing stops that loop. The chart shows the pattern; the tooltip tells you what they thought they were doing.</p>
 
-  <p>That is what the visual gave me: not just a summary of what 161 people did, but a way to find the ones worth paying attention to. The messy, unstructured data became navigable. The outliers became visible. And a dataset that would have taken days to work through became a 20-minute conversation.</p>
+  <p>That is what the visual gave me: not just a summary of what 161 people did, but answers to questions that mattered — which market conditions produced the most fraud, whether our design changes were working, and whether individual players actually understood what they were doing. The messy, multi-dimensional data became navigable. The market-level patterns became visible at a glance. And a dataset that would have taken days to work through became a 20-minute conversation.</p>
 
   <hr>
-  <p class="footnote">Built with D3.js. Data from in-person sessions at the Platform Governance Lab, November–December 2025. All player IDs are anonymized.</p>
+  <p class="footnote">Built with D3.js. Data from in-person sessions at the Platform Governance Lab.</p>
 
 </article>
 
