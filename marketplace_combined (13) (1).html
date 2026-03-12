@@ -1,0 +1,2693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visualizing How Players Think in a Digital Marketplace Experiment</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* ── CHART STYLES (scoped to #chart-section) ── */
+  #chart-section {
+    background: #08090d;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #cfd1d6;
+    font-family: 'DM Sans', sans-serif;
+    min-height: unset;
+  }
+  #chart-section header {
+    text-align: center;
+    padding: 32px 24px 8px;
+    max-width: 1200px;
+    width: 100%;
+  }
+  #chart-section header h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #e8e9ec;
+  }
+  #chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px 40px;
+  }
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: #111320;
+    border: 1px solid #252840;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: #cfd1d6;
+    max-width: 340px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 100;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+  }
+  #tooltip.visible { opacity: 1; }
+  #tooltip .tt-label { font-weight: 700; color: #e8e9ec; margin-bottom: 6px; font-size: 0.82rem; }
+  #tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; }
+  #tooltip .tt-key { color: #6a6d75; }
+  #tooltip .tt-val { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: #e8e9ec; }
+  #tooltip .tt-strength { margin-top: 8px; padding-top: 8px; border-top: 1px solid #252840; color: #8facd4; font-style: italic; }
+  #tooltip .tt-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin: 8px 0 4px; }
+  .legend {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 0 24px 24px;
+    max-width: 700px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: #6a6d75; }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+  /* ── ARTICLE STYLES ── */
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f6f8;
+    --border: #e2e4ea;
+    --text: #2a2c38;
+    --muted: #888ba0;
+    --accent: #2a4fdc;
+    --accent2: #1a6e99;
+    --red: #b62451;
+    --purple: #7c3ab5;
+    --heading: #0e1020;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.85;
+  }
+
+  .hero {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 80px 32px 56px;
+  }
+
+  h1.article-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: clamp(2.4rem, 6vw, 3.8rem);
+    color: var(--heading);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    margin-bottom: 28px;
+  }
+
+  .lede {
+    font-size: 1.1rem;
+    color: var(--muted);
+    line-height: 1.75;
+    max-width: 560px;
+    border-left: 2px solid var(--border);
+    padding-left: 20px;
+  }
+
+  article {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 8px 32px 120px;
+  }
+
+  p {
+    font-size: 1.02rem;
+    color: var(--text);
+    margin-bottom: 26px;
+  }
+
+  h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1.25rem;
+    color: var(--heading);
+    margin: 64px 0 22px;
+    line-height: 1.4;
+  }
+
+  .section-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-top: 64px;
+    margin-bottom: 6px;
+  }
+
+  .pull {
+    margin: 44px 0;
+    padding: 0 0 0 24px;
+    border-left: 2px solid var(--red);
+  }
+  .pull p {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.25rem;
+    color: #9e2040;
+    line-height: 1.55;
+    margin: 0 0 10px;
+  }
+  .pull .attr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .callout {
+    background: #f0f3ff;
+    border: 1px solid #d0d8f5;
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin: 40px 0;
+  }
+  .callout .callout-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 10px;
+  }
+  .callout p {
+    font-style: italic;
+    color: var(--accent2);
+    font-size: 0.97rem;
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 32px 0;
+  }
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .pill .dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .types {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 36px 0;
+  }
+  .type-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .type-card .tc-name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--heading);
+    margin-bottom: 6px;
+  }
+  .type-card .tc-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  em { font-style: italic; color: var(--accent2); }
+  strong { font-weight: 500; color: var(--heading); }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 56px 0 0; }
+  .footnote { font-size: 0.8rem; color: var(--muted); line-height: 1.7; padding-top: 24px; }
+
+  @media (max-width: 580px) {
+    .types { grid-template-columns: 1fr; }
+    h1.article-title { font-size: 2.2rem; }
+    article, .hero { padding-left: 20px; padding-right: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── CHART SECTION ── -->
+<div id="chart-section">
+<header>
+  <h1>Digital Marketplace Experiment &mdash; Seller Strategy Breakdown</h1>
+</header>
+<div class="legend" id="legend"></div>
+<div id="chart-container"><svg id="chart"></svg></div>
+<div id="tooltip"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+const DATA = [
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9FDHKTPGA87EJXE9R8H9H3N",
+    "playerID": "01K9FGSRDQJY9EK3PXV0K16RVA",
+    "strategy_proportions": {
+      "Cheating": 0.4085,
+      "Honest_High": 0.2394,
+      "Honest_Low": 0.2113,
+      "Irrational": 0.1408
+    },
+    "strength": "I have become better and better on knowing what my customer wants~",
+    "points": 49.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9FDHKTPGA87EJXE9R8H9H3N",
+    "playerID": "01K9FGSSGX101F1DNJ5CHBC3GD",
+    "strategy_proportions": {
+      "Cheating": 0.5333,
+      "Honest_High": 0.1833,
+      "Honest_Low": 0.0667,
+      "Irrational": 0.2167
+    },
+    "strength": "better as a seller",
+    "points": 31.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9FDHVDFX5837TB9HW26YX41",
+    "playerID": "01K9FGSVYQAS9NKFRP7C6B6561",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 1.0,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "being honest",
+    "points": 28.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9FDHVDFX5837TB9HW26YX41",
+    "playerID": "01K9FGT19C47Y2N0DS3MK2NEWB",
+    "strategy_proportions": {
+      "Cheating": 0.1846,
+      "Honest_High": 0.2154,
+      "Honest_Low": 0.3077,
+      "Irrational": 0.2923
+    },
+    "strength": "At the beginning of the game I was struggling, but towards the end I understood the market better",
+    "points": 20.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9FDHZ4207T8T738WXFFCHA7",
+    "playerID": "01K9FGT1SDYEH3TPKRSQKP6E00",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 0.5918,
+      "Honest_Low": 0.0,
+      "Irrational": 0.4082
+    },
+    "strength": "As Delta, good reputation",
+    "points": 29.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9FDHZ4207T8T738WXFFCHA7",
+    "playerID": "01K9FGT8Z3D08Z3BZW3GXGCVAY",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 0.8125,
+      "Honest_Low": 0.1875,
+      "Irrational": 0.0
+    },
+    "strength": "Relatively good",
+    "points": 34.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9FKZE7S5X6PVW5G2FS8QN0R",
+    "playerID": "01K9FM3PAJ3RMEWA9840Y6WPR4",
+    "strategy_proportions": {
+      "Cheating": 0.4902,
+      "Honest_High": 0.098,
+      "Honest_Low": 0.4118,
+      "Irrational": 0.0
+    },
+    "strength": "I think that I was reasonably skilled at the game, however I did not really understand the sale matrix screens so that reduced my effectiveness.",
+    "points": 28.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9FKZE7S5X6PVW5G2FS8QN0R",
+    "playerID": "01K9FM3VH03BZ3RHBAQYYVPDKN",
+    "strategy_proportions": {
+      "Cheating": 0.4444,
+      "Honest_High": 0.5556,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "Diversification, Balancing Truth w/ Deception",
+    "points": 31.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9FY690FT4WSSEBN7K1E6CQS",
+    "playerID": "01K9FYHFJMR7ZYBY14PVRG90HZ",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 0.7241,
+      "Honest_Low": 0.2759,
+      "Irrational": 0.0
+    },
+    "strength": "Producing high quality goods and building brand loyalty",
+    "points": 23.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9FY690FT4WSSEBN7K1E6CQS",
+    "playerID": "01K9FYHJTGPN31PY9X0G5ZDC4H",
+    "strategy_proportions": {
+      "Cheating": 0.2727,
+      "Honest_High": 0.4091,
+      "Honest_Low": 0.0,
+      "Irrational": 0.3182
+    },
+    "strength": "I think my understanding of attempting to balance budget and price of the product was one of my strengths.",
+    "points": 32.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9FY65PGB90FQWM7C8H75J32",
+    "playerID": "01K9FYHXYBR3W6DVRYR3CYF0FW",
+    "strategy_proportions": {
+      "Cheating": 0.2432,
+      "Honest_High": 0.5135,
+      "Honest_Low": 0.027,
+      "Irrational": 0.2162
+    },
+    "strength": "Strong",
+    "points": 25.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9FY5XGH64ZDKM9JKFBBDX51",
+    "playerID": "01K9FYJ75JQ7YJJGCES5KGA9FM",
+    "strategy_proportions": {
+      "Cheating": 0.4091,
+      "Honest_High": 0.4318,
+      "Honest_Low": 0.0,
+      "Irrational": 0.1591
+    },
+    "strength": "high",
+    "points": 14.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9FY5XGH64ZDKM9JKFBBDX51",
+    "playerID": "01K9FYJGFVP7PJFZ43QB20N6SH",
+    "strategy_proportions": {
+      "Cheating": 0.3571,
+      "Honest_High": 0.4286,
+      "Honest_Low": 0.0714,
+      "Irrational": 0.1429
+    },
+    "strength": "Selling",
+    "points": 49.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9G1G7QED31CW6E43TB9AEYG",
+    "playerID": "01K9G1WDBA9QXS0KEMG23HT295",
+    "strategy_proportions": {
+      "Cheating": 0.4286,
+      "Honest_High": 0.1905,
+      "Honest_Low": 0.3571,
+      "Irrational": 0.0238
+    },
+    "strength": "It was easy making a profit on lower quality products",
+    "points": 31.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9G1G7QED31CW6E43TB9AEYG",
+    "playerID": "01K9G1WDFE9JV1N4CJXZBR66ZT",
+    "strategy_proportions": {
+      "Cheating": 0.4444,
+      "Honest_High": 0.0556,
+      "Honest_Low": 0.4444,
+      "Irrational": 0.0556
+    },
+    "strength": "I got stronger and generated more profit when my product quality was low, but I advertised high.",
+    "points": 14.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9G1G3YE2D9370EW5FVNBZ7C",
+    "playerID": "01K9G1WE63RREDA85DC6J3144V",
+    "strategy_proportions": {
+      "Cheating": 0.4074,
+      "Honest_High": 0.0556,
+      "Honest_Low": 0.2963,
+      "Irrational": 0.2407
+    },
+    "strength": "I was a quick thinker and I analyzed the initial situation well, where I earned a lot of proft the second round. ",
+    "points": 25.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9G1G3YE2D9370EW5FVNBZ7C",
+    "playerID": "01K9G1WHMCZZQD0V3YXAGFBXNQ",
+    "strategy_proportions": {
+      "Cheating": 0.3571,
+      "Honest_High": 0.1429,
+      "Honest_Low": 0.1786,
+      "Irrational": 0.3214
+    },
+    "strength": "combine the products well",
+    "points": 33.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01K9G1FZ83CX5F2RTXSQCVZVJN",
+    "playerID": "01K9G1WWNVKFY4XV2PB9SCKBHG",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 1.0,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "3/5",
+    "points": 39.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01K9G1FZ83CX5F2RTXSQCVZVJN",
+    "playerID": "01K9G1WYAQEWBX5YNSREM7FEDJ",
+    "strategy_proportions": {
+      "Cheating": 0.3684,
+      "Honest_High": 0.3158,
+      "Honest_Low": 0.2632,
+      "Irrational": 0.0526
+    },
+    "strength": "Eanred $13 profit, and finished with good overall reputation.",
+    "points": 13.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9G1FT0YJG2JTMMVXXRK3V4X",
+    "playerID": "01K9G1WZWEA5ZJ6DSXJ1NKBKB3",
+    "strategy_proportions": {
+      "Cheating": 0.5882,
+      "Honest_High": 0.2353,
+      "Honest_Low": 0.1765,
+      "Irrational": 0.0
+    },
+    "strength": "I noticed that people would often still buy the lower quality product for the higher quality cost.",
+    "points": 22.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9FVAC0TB25T2SJ88FEQN9HB",
+    "playerID": "01K9FVBBEVVPP4FSNZ9AFE08SR",
+    "strategy_proportions": {
+      "Cheating": 0.1,
+      "Honest_High": 0.65,
+      "Honest_Low": 0.2,
+      "Irrational": 0.05
+    },
+    "strength": "I stayed to advertise my products honestly so customers were willing to buy more in the future.",
+    "points": 34.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9FVAC0TB25T2SJ88FEQN9HB",
+    "playerID": "01K9FVC13AW4E2WTQFCJZV9FZJ",
+    "strategy_proportions": {
+      "Cheating": 0.5,
+      "Honest_High": 0.5,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "Testing Vedant Kejariwa ",
+    "points": 28.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01K9FVCA4N4NDQQGGH8T08VBK5",
+    "playerID": "01K9FVEAJ6R9QJHJ5SDMG2HHGV",
+    "strategy_proportions": {
+      "Cheating": 0.2963,
+      "Honest_High": 0.4815,
+      "Honest_Low": 0.1111,
+      "Irrational": 0.1111
+    },
+    "strength": "I provide all different products.",
+    "points": 32.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01K9FVCA4N4NDQQGGH8T08VBK5",
+    "playerID": "01K9FVEBTJ0VD5TNP398TS6YGJ",
+    "strategy_proportions": {
+      "Cheating": 0.4444,
+      "Honest_High": 0.5556,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "good at math so see there's no real difference between the high quality high cost, high advertising, v.s. high quality, high cost, low advertising so might as well do high advertising always as it didn't cost extra",
+    "points": 28.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9FVER3WEVF0JBZY1VN8EWJZ",
+    "playerID": "01K9FVEDJ7BWKYE4V4B9T6DP25",
+    "strategy_proportions": {
+      "Cheating": 0.025,
+      "Honest_High": 0.05,
+      "Honest_Low": 0.925,
+      "Irrational": 0.0
+    },
+    "strength": "My strength in this game was my risk management. ",
+    "points": 24.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9FVER3WEVF0JBZY1VN8EWJZ",
+    "playerID": "01K9FVF2ZF7T52398E8F3YS2PS",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 0.6875,
+      "Honest_Low": 0.0,
+      "Irrational": 0.3125
+    },
+    "strength": "My strength would be looking at the benefits and downsides to each product type.",
+    "points": 33.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9FVFJR3WF5447H1ZJPXCZDF",
+    "playerID": "01K9FVFQGHENC9CGTVCSJ9917P",
+    "strategy_proportions": {
+      "Cheating": 0.0333,
+      "Honest_High": 0.2667,
+      "Honest_Low": 0.6,
+      "Irrational": 0.1
+    },
+    "strength": "I was willing to try out different tactics.",
+    "points": 14.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9FVFJR3WF5447H1ZJPXCZDF",
+    "playerID": "01K9FVFS4T7QD7ENSD9QWW1KYT",
+    "strategy_proportions": {
+      "Cheating": 0.5,
+      "Honest_High": 0.5,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "Ability to gain trust from buyers",
+    "points": 29.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9G5C6PJF3CAV97NYW644E5K",
+    "playerID": "01K9G5CB2X5MHQ6Y4MXR8DKSB4",
+    "strategy_proportions": {
+      "Cheating": 0.2857,
+      "Honest_High": 0.25,
+      "Honest_Low": 0.4643,
+      "Irrational": 0.0
+    },
+    "strength": "Weak",
+    "points": 22.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9G5C6PJF3CAV97NYW644E5K",
+    "playerID": "01K9G5CBTY50RNBYB5V12CJQJ3",
+    "strategy_proportions": {
+      "Cheating": 0.4444,
+      "Honest_High": 0.4,
+      "Honest_Low": 0.0,
+      "Irrational": 0.1556
+    },
+    "strength": "understanding buyer reaction",
+    "points": 40.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01K9G5CA0EHWC16M192283KHPK",
+    "playerID": "01K9G5CCPEQ5S6770MYWN30YXD",
+    "strategy_proportions": {
+      "Cheating": 0.1569,
+      "Honest_High": 0.3137,
+      "Honest_Low": 0.4706,
+      "Irrational": 0.0588
+    },
+    "strength": "Not strong, didn't earn a consistent profit despite diversifying the quality and advertising price offered",
+    "points": 3.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01K9G5CA0EHWC16M192283KHPK",
+    "playerID": "01K9G5CJZHR849VEF9ZYCVP7Q6",
+    "strategy_proportions": {
+      "Cheating": 0.4222,
+      "Honest_High": 0.4889,
+      "Honest_Low": 0.0222,
+      "Irrational": 0.0667
+    },
+    "strength": "Fairly Strong",
+    "points": 60.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9G5CKGHFNNQDPQVMSJVG2VR",
+    "playerID": "01K9G5CZ1M96H1657WDCRZ8EJZ",
+    "strategy_proportions": {
+      "Cheating": 0.3333,
+      "Honest_High": 0.6667,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "idk",
+    "points": 16.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9G5CKGHFNNQDPQVMSJVG2VR",
+    "playerID": "01K9G5D2YBQNFC74XG6EKAAJSR",
+    "strategy_proportions": {
+      "Cheating": 0.5667,
+      "Honest_High": 0.4,
+      "Honest_Low": 0.0333,
+      "Irrational": 0.0
+    },
+    "strength": "Decent closer to the end of the game, as I was able to gain a pretty substantial percent of the potential profit.  ",
+    "points": 39.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9G5D79B7751WC024YVK5GFN",
+    "playerID": "01K9G5DGYZMV8PBBFEBDJW6HTW",
+    "strategy_proportions": {
+      "Cheating": 0.8235,
+      "Honest_High": 0.1765,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "Quick decisions",
+    "points": 32.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9G5D79B7751WC024YVK5GFN",
+    "playerID": "01K9G5DK5V803R88Q14FMWB9AH",
+    "strategy_proportions": {
+      "Cheating": 0.5652,
+      "Honest_High": 0.2174,
+      "Honest_Low": 0.1304,
+      "Irrational": 0.087
+    },
+    "strength": "Selling some high and some low quality products",
+    "points": 26.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9FA4JXXC2AHT39ME2VBDFYD",
+    "playerID": "01K9FA4VDB43KWS9BG64YHDFEM",
+    "strategy_proportions": {
+      "Cheating": 0.087,
+      "Honest_High": 0.7391,
+      "Honest_Low": 0.0,
+      "Irrational": 0.1739
+    },
+    "strength": "8/10",
+    "points": 46.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01K9FA4JXXC2AHT39ME2VBDFYD",
+    "playerID": "01K9FA50M04S2KJ0GZCW81GJ68",
+    "strategy_proportions": {
+      "Cheating": 0.1905,
+      "Honest_High": 0.3333,
+      "Honest_Low": 0.1905,
+      "Irrational": 0.2857
+    },
+    "strength": "5",
+    "points": 13.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01K9FA0VGJ4J4JV7K8XK75YGDQ",
+    "playerID": "01K9FA5FHBRCGBPPR4QGYMCXGP",
+    "strategy_proportions": {
+      "Cheating": 0.0923,
+      "Honest_High": 0.3077,
+      "Honest_Low": 0.5077,
+      "Irrational": 0.0923
+    },
+    "strength": "Didn't really understand why buyers would buy sometimes and not others",
+    "points": 30.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9FA25KSJRVWGBVP6483MHN3",
+    "playerID": "01K9FA5X9G9DYH8V3N3DD1XFS4",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 1.0,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "I just kept doing the same thing because it was working. ",
+    "points": 39.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01K9FA25KSJRVWGBVP6483MHN3",
+    "playerID": "01K9FA6NG3ATPQVGX13S8X1PTJ",
+    "strategy_proportions": {
+      "Cheating": 0.2424,
+      "Honest_High": 0.2727,
+      "Honest_Low": 0.2121,
+      "Irrational": 0.2727
+    },
+    "strength": "Taught players how to strategize on selling products. ",
+    "points": 32.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01K9E628FKQN6273Y54CJ9KR54",
+    "playerID": "01K9FA7BXWAFC23GKQVWJRYJE9",
+    "strategy_proportions": {
+      "Cheating": 0.087,
+      "Honest_High": 0.3623,
+      "Honest_Low": 0.5507,
+      "Irrational": 0.0
+    },
+    "strength": "I am good at changing the price after each round",
+    "points": 77.0
+  },
+  {
+    "week": "2025-11-07",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01K9E628FKQN6273Y54CJ9KR54",
+    "playerID": "01K9FA7J28790HJNMTWVAHHD0W",
+    "strategy_proportions": {
+      "Cheating": 0.16,
+      "Honest_High": 0.2267,
+      "Honest_Low": 0.6133,
+      "Irrational": 0.0
+    },
+    "strength": "I wouldn't say I had any particular strengths in the game",
+    "points": 24.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KA1H8ZMMV68D88XHVZD20PJJ",
+    "playerID": "01KA1HCH5VY5801WPCBJMB97QR",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 0.4028,
+      "Honest_Low": 0.5972,
+      "Irrational": 0.0
+    },
+    "strength": "Moderate",
+    "points": 38.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA1H8FNB0R01WR4FJYJGYT6W",
+    "playerID": "01KA1HCMJCZRG0E2P5H8NT8HEY",
+    "strategy_proportions": {
+      "Cheating": 0.437,
+      "Honest_High": 0.2101,
+      "Honest_Low": 0.2605,
+      "Irrational": 0.0924
+    },
+    "strength": "pretty decent",
+    "points": 57.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA1H8FNB0R01WR4FJYJGYT6W",
+    "playerID": "01KA1HD33E4JR3NG5CQ8GTRCMQ",
+    "strategy_proportions": {
+      "Cheating": 0.4042,
+      "Honest_High": 0.2056,
+      "Honest_Low": 0.3554,
+      "Irrational": 0.0348
+    },
+    "strength": "I would describe my strength as when I saw the trends in what people were buying, I was able to adjust as a seller",
+    "points": 34.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA1H8TKSAWT87R5GBFHGM1N8",
+    "playerID": "01KA1HDBZ80APSHMKG7MG2Z1N8",
+    "strategy_proportions": {
+      "Cheating": 0.194,
+      "Honest_High": 0.3284,
+      "Honest_Low": 0.3433,
+      "Irrational": 0.1343
+    },
+    "strength": "Able to produce large amounts of products for no risk",
+    "points": 38.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA1H8TKSAWT87R5GBFHGM1N8",
+    "playerID": "01KA1HDE3M54JN0R6ZQXF2J642",
+    "strategy_proportions": {
+      "Cheating": 0.0455,
+      "Honest_High": 0.8,
+      "Honest_Low": 0.0455,
+      "Irrational": 0.1091
+    },
+    "strength": "My strength is moderate. ",
+    "points": 18.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA1H8NCVGSG9AKABAJT8CCX1",
+    "playerID": "01KA1HKG6EBT4MSAF4YENJX1KX",
+    "strategy_proportions": {
+      "Cheating": 0.1452,
+      "Honest_High": 0.8011,
+      "Honest_Low": 0.0538,
+      "Irrational": 0.0
+    },
+    "strength": "understanding ",
+    "points": 28.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA1H8NCVGSG9AKABAJT8CCX1",
+    "playerID": "01KA1HR6J9JY1NSXTTPA3WQ904",
+    "strategy_proportions": {
+      "Cheating": 0.0068,
+      "Honest_High": 0.3493,
+      "Honest_Low": 0.6438,
+      "Irrational": 0.0
+    },
+    "strength": "I don't think I did all that well to be honest.",
+    "points": 46.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KA1MVRFK5K8CQE1PKRKPJ9X2",
+    "playerID": "01KA1MWFGSWC3T44P5AMGWDS75",
+    "strategy_proportions": {
+      "Cheating": 0.5656,
+      "Honest_High": 0.082,
+      "Honest_Low": 0.2623,
+      "Irrational": 0.0902
+    },
+    "strength": "pretty well",
+    "points": 38.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KA1MVRFK5K8CQE1PKRKPJ9X2",
+    "playerID": "01KA1MXAWT9KV4E7K64Q760RDX",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 0.3704,
+      "Honest_Low": 0.6296,
+      "Irrational": 0.0
+    },
+    "strength": "Honesty",
+    "points": 50.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA1MVM861TE2YD4901RMEC13",
+    "playerID": "01KA1MY6C4FJ0CDAC5R39TZSRQ",
+    "strategy_proportions": {
+      "Cheating": 0.1923,
+      "Honest_High": 0.6154,
+      "Honest_Low": 0.1923,
+      "Irrational": 0.0
+    },
+    "strength": "I was able to provide high quality products for higher cost in order for the buyers to always buy them and just stake them since there was no risk. That was always the safest option as a seller",
+    "points": 34.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA1MVM861TE2YD4901RMEC13",
+    "playerID": "01KA1MYVHAD9MQR8WDKG5ZP5MD",
+    "strategy_proportions": {
+      "Cheating": 0.2727,
+      "Honest_High": 0.4727,
+      "Honest_Low": 0.2545,
+      "Irrational": 0.0
+    },
+    "strength": "7/10 at reading buyer trends",
+    "points": 39.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA1MVEFS58EVVGF2ZSX36BQ7",
+    "playerID": "01KA1MZ9P6XPGPGSCKG2ZRNATE",
+    "strategy_proportions": {
+      "Cheating": 0.3763,
+      "Honest_High": 0.086,
+      "Honest_Low": 0.3441,
+      "Irrational": 0.1935
+    },
+    "strength": "I think I was able to kind of see the patterns at the end",
+    "points": 17.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA1MVEFS58EVVGF2ZSX36BQ7",
+    "playerID": "01KA1MZCRX45PBCERCD86NTNDQ",
+    "strategy_proportions": {
+      "Cheating": 0.1284,
+      "Honest_High": 0.5505,
+      "Honest_Low": 0.1009,
+      "Irrational": 0.2202
+    },
+    "strength": "sell high quality products ",
+    "points": 49.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA1MVAAWEYMT4N82P3VGZ98M",
+    "playerID": "01KA1MZPHNC83ESE0JVPAVHQ1Y",
+    "strategy_proportions": {
+      "Cheating": 0.3668,
+      "Honest_High": 0.2261,
+      "Honest_Low": 0.1005,
+      "Irrational": 0.3065
+    },
+    "strength": "My strength was getting to determine how much of each product I got to sold.",
+    "points": 51.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA1MVAAWEYMT4N82P3VGZ98M",
+    "playerID": "01KA1MZS4AEB8R1W9FF27G6QKJ",
+    "strategy_proportions": {
+      "Cheating": 0.0905,
+      "Honest_High": 0.3719,
+      "Honest_Low": 0.3065,
+      "Irrational": 0.2312
+    },
+    "strength": "Identifying the quantity that is ideal to produce ",
+    "points": 23.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA1R7JQ9TCNBP129NKSW1H3H",
+    "playerID": "01KA1RAYQPSBE093SRG8RG47S3",
+    "strategy_proportions": {
+      "Cheating": 0.3942,
+      "Honest_High": 0.1606,
+      "Honest_Low": 0.3285,
+      "Irrational": 0.1168
+    },
+    "strength": "Im not quite sure if I understood the game",
+    "points": 25.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA1R7JQ9TCNBP129NKSW1H3H",
+    "playerID": "01KA1RAZ70APE8X1AKWW8P6R2B",
+    "strategy_proportions": {
+      "Cheating": 0.2062,
+      "Honest_High": 0.3093,
+      "Honest_Low": 0.3299,
+      "Irrational": 0.1546
+    },
+    "strength": "I learned from trends and mistakes",
+    "points": 40.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA1R7E5XX09EZ1MDWAZ0NNFE",
+    "playerID": "01KA1RBKEPZJRWVYMTS1VGXW7J",
+    "strategy_proportions": {
+      "Cheating": 0.1081,
+      "Honest_High": 0.3333,
+      "Honest_Low": 0.4955,
+      "Irrational": 0.0631
+    },
+    "strength": "i did not understand what I was instructed to do and how to optimize profit for the brand ",
+    "points": 17.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA1VKXJ26JVQ1GX8MC9Q66SC",
+    "playerID": "01KA1VPVW1WA8VH0284AGDXPZ4",
+    "strategy_proportions": {
+      "Cheating": 0.15,
+      "Honest_High": 0.25,
+      "Honest_Low": 0.6,
+      "Irrational": 0.0
+    },
+    "strength": "I found that buyers are were more inclined in purchasing lower-cost products",
+    "points": 41.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA1VKXJ26JVQ1GX8MC9Q66SC",
+    "playerID": "01KA1VPWZPWSF0KW3NWZQSX38K",
+    "strategy_proportions": {
+      "Cheating": 0.0719,
+      "Honest_High": 0.1079,
+      "Honest_Low": 0.8201,
+      "Irrational": 0.0
+    },
+    "strength": "I think the data based on how we should sell is a bit limited and we couldn't control how we wanted to market so while I could control some aspects, I didn't have that much strength in the game",
+    "points": 42.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA1VKMXWV83KW3P65R4YB1Z1",
+    "playerID": "01KA1VQ8MKTE2EA4G1FDEC8KAT",
+    "strategy_proportions": {
+      "Cheating": 0.6185,
+      "Honest_High": 0.3133,
+      "Honest_Low": 0.0321,
+      "Irrational": 0.0361
+    },
+    "strength": "Increasing profitability",
+    "points": 35.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA1YWG3XASARJWJ862EMW9K3",
+    "playerID": "01KA1Z52Z18KG1TEBC2QQX0ZVK",
+    "strategy_proportions": {
+      "Cheating": 0.1694,
+      "Honest_High": 0.3226,
+      "Honest_Low": 0.379,
+      "Irrational": 0.129
+    },
+    "strength": "Pretty good considering I made a decent profit",
+    "points": 46.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA1YWG3XASARJWJ862EMW9K3",
+    "playerID": "01KA1Z53HR3AF9E28GM7RJ33PP",
+    "strategy_proportions": {
+      "Cheating": 0.2273,
+      "Honest_High": 0.4545,
+      "Honest_Low": 0.2273,
+      "Irrational": 0.0909
+    },
+    "strength": "I could not understand this game well",
+    "points": 11.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KA1YW24WD37HV3DDFXXA3075",
+    "playerID": "01KA1Z544TM0ESJWGBMXZ66RTG",
+    "strategy_proportions": {
+      "Cheating": 0.1333,
+      "Honest_High": 0.6667,
+      "Honest_Low": 0.2,
+      "Irrational": 0.0
+    },
+    "strength": "Being truthful and not taking advantage of customers",
+    "points": 27.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KA1YW24WD37HV3DDFXXA3075",
+    "playerID": "01KA1Z54A4JQ482TX4HRZ7ZQE5",
+    "strategy_proportions": {
+      "Cheating": 0.1818,
+      "Honest_High": 0.4182,
+      "Honest_Low": 0.4,
+      "Irrational": 0.0
+    },
+    "strength": "having a few wrongfully advertised products for each actual high quality product. also, having low aulity products as well",
+    "points": 57.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA1YVXXFATGSMDJTVKRKJ49N",
+    "playerID": "01KA1Z5M9VZPXV3RKTTCS5BVJ9",
+    "strategy_proportions": {
+      "Cheating": 0.3037,
+      "Honest_High": 0.288,
+      "Honest_Low": 0.2932,
+      "Irrational": 0.1152
+    },
+    "strength": "analyzing the market",
+    "points": 28.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA1YVSW17HJB05VVQ1RW3TSB",
+    "playerID": "01KA1Z5MV3WDETX0W2Q735DC3J",
+    "strategy_proportions": {
+      "Cheating": 0.2652,
+      "Honest_High": 0.0833,
+      "Honest_Low": 0.1742,
+      "Irrational": 0.4773
+    },
+    "strength": "alright, was a little confused at first",
+    "points": 51.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KA22DZA82HD1ZA65HHWD7PB7",
+    "playerID": "01KA22EYRJ02RKKWY52TGBWJZA",
+    "strategy_proportions": {
+      "Cheating": 0.338,
+      "Honest_High": 0.2958,
+      "Honest_Low": 0.2676,
+      "Irrational": 0.0986
+    },
+    "strength": "Making profit",
+    "points": 61.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KA22DZA82HD1ZA65HHWD7PB7",
+    "playerID": "01KA22F1BCZNWMD7A2B6VVSBNY",
+    "strategy_proportions": {
+      "Cheating": 0.3103,
+      "Honest_High": 0.3138,
+      "Honest_Low": 0.3379,
+      "Irrational": 0.0379
+    },
+    "strength": "poor",
+    "points": 14.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA22DTTJZ7GR73W0BQ53P6CM",
+    "playerID": "01KA22JRD0AMGN9SDB50ZWP1RR",
+    "strategy_proportions": {
+      "Cheating": 0.202,
+      "Honest_High": 0.5253,
+      "Honest_Low": 0.1465,
+      "Irrational": 0.1263
+    },
+    "strength": "Moderate",
+    "points": 36.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA22DTTJZ7GR73W0BQ53P6CM",
+    "playerID": "01KA22JRZBF6467D273FD1A7Y3",
+    "strategy_proportions": {
+      "Cheating": 0.1538,
+      "Honest_High": 0.5385,
+      "Honest_Low": 0.1538,
+      "Irrational": 0.1538
+    },
+    "strength": "I think I got better as the rounds continued and gained a lot more profit after the first three rounds.",
+    "points": 20.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA22DPZ473J45PWC01AWPW4Z",
+    "playerID": "01KA22JWJBMNYT77Z78ZFMJAT7",
+    "strategy_proportions": {
+      "Cheating": 0.3256,
+      "Honest_High": 0.5,
+      "Honest_Low": 0.1744,
+      "Irrational": 0.0
+    },
+    "strength": "I felt like I knew what I was doing.",
+    "points": 41.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA22DPZ473J45PWC01AWPW4Z",
+    "playerID": "01KA22K2K3N21081DEH5TT22DX",
+    "strategy_proportions": {
+      "Cheating": 0.1364,
+      "Honest_High": 0.8636,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "change decision flexibly",
+    "points": 30.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA22DJXT9302VHE00HPBBZSG",
+    "playerID": "01KA22KGDZKZCH21S8R3EBME36",
+    "strategy_proportions": {
+      "Cheating": 0.5276,
+      "Honest_High": 0.3937,
+      "Honest_Low": 0.0787,
+      "Irrational": 0.0
+    },
+    "strength": "Not sure ",
+    "points": 68.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA22DJXT9302VHE00HPBBZSG",
+    "playerID": "01KA22KJA7R4MH2Q77CBKN1RFH",
+    "strategy_proportions": {
+      "Cheating": 0.2171,
+      "Honest_High": 0.1744,
+      "Honest_Low": 0.4806,
+      "Irrational": 0.1279
+    },
+    "strength": "I think my strength was looking at which one of the products did well in comparison to the others",
+    "points": 29.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KA25SQB6166Z31CE0QSXAXM5",
+    "playerID": "01KA25WV6Z29FWDZ28QKVQ0GPC",
+    "strategy_proportions": {
+      "Cheating": 0.4247,
+      "Honest_High": 0.0309,
+      "Honest_Low": 0.5444,
+      "Irrational": 0.0
+    },
+    "strength": "I noticed patterns in the buyer's behavior",
+    "points": 50.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA25SKBS8V9B2560C5S1YXJ9",
+    "playerID": "01KA25WWZCQ1NY6FGW619B03KE",
+    "strategy_proportions": {
+      "Cheating": 0.2174,
+      "Honest_High": 0.4522,
+      "Honest_Low": 0.3304,
+      "Irrational": 0.0
+    },
+    "strength": "My strength within the game was staying true to brand reputation. ",
+    "points": 22.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA25SKBS8V9B2560C5S1YXJ9",
+    "playerID": "01KA25X46D2P54JX3H5AT6KGXE",
+    "strategy_proportions": {
+      "Cheating": 0.4813,
+      "Honest_High": 0.2336,
+      "Honest_Low": 0.0935,
+      "Irrational": 0.1916
+    },
+    "strength": "I had none.",
+    "points": 21.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA25SFD3XKEXR9RP9ME7PPZK",
+    "playerID": "01KA25X4M8YX9KPSCQHMJ8A0BT",
+    "strategy_proportions": {
+      "Cheating": 0.3148,
+      "Honest_High": 0.2444,
+      "Honest_Low": 0.4407,
+      "Irrational": 0.0
+    },
+    "strength": "I think my strength was analyzing which pricing strategy performed best over time. ",
+    "points": 55.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA25SFD3XKEXR9RP9ME7PPZK",
+    "playerID": "01KA25X9CA0PSYDDGNE3ASBB0H",
+    "strategy_proportions": {
+      "Cheating": 0.4545,
+      "Honest_High": 0.4545,
+      "Honest_Low": 0.0273,
+      "Irrational": 0.0636
+    },
+    "strength": "Being able to determine what attracts consumers to the market",
+    "points": 25.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KA1DQ04XT5DGFG26ZNMYRGW0",
+    "playerID": "01KA1DXCW8TP92V8EXBJXV4SV1",
+    "strategy_proportions": {
+      "Cheating": 0.24,
+      "Honest_High": 0.56,
+      "Honest_Low": 0.0,
+      "Irrational": 0.2
+    },
+    "strength": "Selling",
+    "points": 15.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KA1DQ04XT5DGFG26ZNMYRGW0",
+    "playerID": "01KA1DXDBE8A1NJ1FVNHA09VNJ",
+    "strategy_proportions": {
+      "Cheating": 0.4471,
+      "Honest_High": 0.2941,
+      "Honest_Low": 0.0824,
+      "Irrational": 0.1765
+    },
+    "strength": "Making the company have a positive impression",
+    "points": 23.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA1DPVFRBH3DTTJKFQGFAN2R",
+    "playerID": "01KA1DXQGEJABJ0796RGZFRQB5",
+    "strategy_proportions": {
+      "Cheating": 0.1395,
+      "Honest_High": 0.5814,
+      "Honest_Low": 0.2791,
+      "Irrational": 0.0
+    },
+    "strength": "learned quickly about selling bad products.",
+    "points": 14.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA1DPVFRBH3DTTJKFQGFAN2R",
+    "playerID": "01KA1DY5GBEH8DR8GF2BDKHPE0",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 0.7143,
+      "Honest_Low": 0.1176,
+      "Irrational": 0.1681
+    },
+    "strength": "choosing cost-leadership approach towards the end (producing low advertising low) because sellers are more likely to choose the one where they won't get scammed which is if the product appears of low quality at first",
+    "points": 30.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA1DQ4M3R03CJWPDKQ3ATERD",
+    "playerID": "01KA1DY6D3MV987HRWJJTWF4MK",
+    "strategy_proportions": {
+      "Cheating": 0.4106,
+      "Honest_High": 0.4768,
+      "Honest_Low": 0.1126,
+      "Irrational": 0.0
+    },
+    "strength": "i would say making higher quality products as a strategy usually works to get more moeny",
+    "points": 12.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KA1DQ4M3R03CJWPDKQ3ATERD",
+    "playerID": "01KA1DYTJEEFNGKHNHM5MRJRRH",
+    "strategy_proportions": {
+      "Cheating": 0.148,
+      "Honest_High": 0.0969,
+      "Honest_Low": 0.7143,
+      "Irrational": 0.0408
+    },
+    "strength": "Reputation ",
+    "points": 51.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA1DPNXFV9PXJCMJH7BJ5JR0",
+    "playerID": "01KA1DYX30FQ0WV8ZHBJTJPTHZ",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 0.9286,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0714
+    },
+    "strength": "knowing how to gain profits through decisions",
+    "points": 6.0
+  },
+  {
+    "week": "2025-11-14",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KA1DPNXFV9PXJCMJH7BJ5JR0",
+    "playerID": "01KA1DYYJCY9AMRWAZ8S7EAWNH",
+    "strategy_proportions": {
+      "Cheating": 0.2692,
+      "Honest_High": 0.6538,
+      "Honest_Low": 0.0769,
+      "Irrational": 0.0
+    },
+    "strength": "I understood that high quality was more valuable to customers. ",
+    "points": 0.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KAM6XC9XB7JKYN6QSPGQVFQV",
+    "playerID": "01KAM6XQKY84HGW2M3N68T9962",
+    "strategy_proportions": {
+      "Cheating": 0.0526,
+      "Honest_High": 0.7368,
+      "Honest_Low": 0.2105,
+      "Irrational": 0.0
+    },
+    "strength": "I think i would describe my strength to lie in finding a pattern and understanding the views or perceptions of the buyers that would reflect as a result of the way that me, the supplier, was advertising and producing the products. ",
+    "points": 25.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KAM6XC9XB7JKYN6QSPGQVFQV",
+    "playerID": "01KAM6XSMAFMNSD4GTZMN2F9JA",
+    "strategy_proportions": {
+      "Cheating": 0.375,
+      "Honest_High": 0.3661,
+      "Honest_Low": 0.2321,
+      "Irrational": 0.0268
+    },
+    "strength": "I would describe my strength as weak. I wasn't able to make adequate profits and I wish I was more honest, leading to more profit ",
+    "points": 43.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KAM6X8Q8D5SVZHY6WQ8VEA7M",
+    "playerID": "01KAM6XTD2F1DY8EAG553VFXCV",
+    "strategy_proportions": {
+      "Cheating": 0.2252,
+      "Honest_High": 0.2342,
+      "Honest_Low": 0.4685,
+      "Irrational": 0.0721
+    },
+    "strength": "Know better about the buyers preference and from the result, know better for the market",
+    "points": 24.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KAM6X8Q8D5SVZHY6WQ8VEA7M",
+    "playerID": "01KAM6XXRJ7B2EG20KQCYK84VX",
+    "strategy_proportions": {
+      "Cheating": 0.15,
+      "Honest_High": 0.1,
+      "Honest_Low": 0.75,
+      "Irrational": 0.0
+    },
+    "strength": "trying different things to find best outcome",
+    "points": 26.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KAM6X5PW5WKCSJR5S9Q1Y0S4",
+    "playerID": "01KAM6YB25W6MTR400FD3BV3XQ",
+    "strategy_proportions": {
+      "Cheating": 0.7719,
+      "Honest_High": 0.193,
+      "Honest_Low": 0.0351,
+      "Irrational": 0.0
+    },
+    "strength": "able to choose and play with others",
+    "points": 28.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KAM6X5PW5WKCSJR5S9Q1Y0S4",
+    "playerID": "01KAM6YB7NEBM06ZS1FB0VKG0J",
+    "strategy_proportions": {
+      "Cheating": 0.2319,
+      "Honest_High": 0.3913,
+      "Honest_Low": 0.3623,
+      "Irrational": 0.0145
+    },
+    "strength": "It was cool, pretty strong",
+    "points": 59.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KAM6X1BBMXVR9NGDWH4XXFJ6",
+    "playerID": "01KAM6YNC3SZ0BH58MYJK8WJT0",
+    "strategy_proportions": {
+      "Cheating": 0.2353,
+      "Honest_High": 0.4902,
+      "Honest_Low": 0.1569,
+      "Irrational": 0.1176
+    },
+    "strength": "I try to put more quantity on high advertisement and high produce, and it worked well",
+    "points": 25.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KAM6X1BBMXVR9NGDWH4XXFJ6",
+    "playerID": "01KAM70PAN0Z1SSFPXRYAFV9D6",
+    "strategy_proportions": {
+      "Cheating": 0.5422,
+      "Honest_High": 0.0904,
+      "Honest_Low": 0.3072,
+      "Irrational": 0.0602
+    },
+    "strength": "Being able to differentiate what were good business decisions.",
+    "points": 26.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KAKN3Y00HWSBNPNBX23AQ9B9",
+    "playerID": "01KAKNM9GEYP0188TJ17P8B9FV",
+    "strategy_proportions": {
+      "Cheating": 0.6145,
+      "Honest_High": 0.0602,
+      "Honest_Low": 0.3012,
+      "Irrational": 0.0241
+    },
+    "strength": "observation",
+    "points": 12.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KAKN3T8ESR47M7VDMSZAT7YJ",
+    "playerID": "01KAKNMNG2HQWP8155RM9AN4CC",
+    "strategy_proportions": {
+      "Cheating": 0.1744,
+      "Honest_High": 0.3721,
+      "Honest_Low": 0.4535,
+      "Irrational": 0.0
+    },
+    "strength": "honest.",
+    "points": 22.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KAKN3T8ESR47M7VDMSZAT7YJ",
+    "playerID": "01KAKNMTAM6Q96TTCS0Q21M5WF",
+    "strategy_proportions": {
+      "Cheating": 0.5714,
+      "Honest_High": 0.3214,
+      "Honest_Low": 0.1071,
+      "Irrational": 0.0
+    },
+    "strength": "I thought I was able to control the market system as a seller with dishonest policy, this overall contributed to my ability to gather the most amounts of profits available.",
+    "points": 26.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KAKN3P40J9M3881GJREZRY5B",
+    "playerID": "01KAKNNG9E5Z238PYXV6HFHHVB",
+    "strategy_proportions": {
+      "Cheating": 0.1818,
+      "Honest_High": 0.3295,
+      "Honest_Low": 0.4318,
+      "Irrational": 0.0568
+    },
+    "strength": "I think my strengths were that i was mostly honest with what i was selling and built up a very good reputation.",
+    "points": 45.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KAKN3P40J9M3881GJREZRY5B",
+    "playerID": "01KAKNNXGGBEEHBA5H47SQFMW2",
+    "strategy_proportions": {
+      "Cheating": 0.1356,
+      "Honest_High": 0.3051,
+      "Honest_Low": 0.4492,
+      "Irrational": 0.1102
+    },
+    "strength": "Building good trust was one of my strengths I had",
+    "points": 13.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KAKRY14YKTZHB66P68WABTAZ",
+    "playerID": "01KAKS2P38E1Q4Q9S90Q6R5C26",
+    "strategy_proportions": {
+      "Cheating": 0.4844,
+      "Honest_High": 0.25,
+      "Honest_Low": 0.2656,
+      "Irrational": 0.0
+    },
+    "strength": "I think I understood it somewhat well and adapted to make decisions that made me more profit ",
+    "points": 24.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KAKRY14YKTZHB66P68WABTAZ",
+    "playerID": "01KAKS2Y2HTDTA4VHAPR3AV8W7",
+    "strategy_proportions": {
+      "Cheating": 0.4495,
+      "Honest_High": 0.211,
+      "Honest_Low": 0.3394,
+      "Irrational": 0.0
+    },
+    "strength": "Pretty good",
+    "points": 42.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KAKRXSW0KAA37AR25BG2QNN6",
+    "playerID": "01KAKS4276X1Z2YATVYKX15RPC",
+    "strategy_proportions": {
+      "Cheating": 0.3505,
+      "Honest_High": 0.0654,
+      "Honest_Low": 0.5607,
+      "Irrational": 0.0234
+    },
+    "strength": "Pretty good",
+    "points": 83.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KAKRXNFRDN0CS96X37BGKKZF",
+    "playerID": "01KAKS4H6CC95RW2VAX3S3W1G2",
+    "strategy_proportions": {
+      "Cheating": 0.4513,
+      "Honest_High": 0.1858,
+      "Honest_Low": 0.2478,
+      "Irrational": 0.115
+    },
+    "strength": "v",
+    "points": 18.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KAKRXNFRDN0CS96X37BGKKZF",
+    "playerID": "01KAKS5AA70ZEQRBEM5SB620T8",
+    "strategy_proportions": {
+      "Cheating": 0.225,
+      "Honest_High": 0.1,
+      "Honest_Low": 0.6,
+      "Irrational": 0.075
+    },
+    "strength": "I was good at noticing the trends in what was and was not selling.",
+    "points": 20.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KAKRXHS1705KCRSHSDYW16YD",
+    "playerID": "01KAKS5C287E1PJKQD921BH3QW",
+    "strategy_proportions": {
+      "Cheating": 0.2903,
+      "Honest_High": 0.0323,
+      "Honest_Low": 0.629,
+      "Irrational": 0.0484
+    },
+    "strength": "balancing between different strategies",
+    "points": 35.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KAKRXHS1705KCRSHSDYW16YD",
+    "playerID": "01KAKS5KA7C9RESZBAJS0QXNP0",
+    "strategy_proportions": {
+      "Cheating": 0.6322,
+      "Honest_High": 0.3678,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "At first when I had no reputation, it was hard to get people to buy my products even when they were advertised as high quality. I felt like I had no power without the stake to convince buyers to purchase my products.",
+    "points": 20.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KAKW80G2MMRCP2HV7VFQBK9W",
+    "playerID": "01KAKWGV7ET4G7PB0D8TCKM7ER",
+    "strategy_proportions": {
+      "Cheating": 0.1053,
+      "Honest_High": 0.2368,
+      "Honest_Low": 0.5,
+      "Irrational": 0.1579
+    },
+    "strength": "Calculating the prices.",
+    "points": 16.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KAKW80G2MMRCP2HV7VFQBK9W",
+    "playerID": "01KAKWGVWR4NHNDTN94G92ADGF",
+    "strategy_proportions": {
+      "Cheating": 0.2264,
+      "Honest_High": 0.0755,
+      "Honest_Low": 0.3208,
+      "Irrational": 0.3774
+    },
+    "strength": "Good ",
+    "points": 37.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KAKW7S1MF06ABK1RV07MGX3R",
+    "playerID": "01KAKWGZ1Y3C1S7BNC2PAH9RFA",
+    "strategy_proportions": {
+      "Cheating": 0.5755,
+      "Honest_High": 0.4245,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "To hide the bad products among the good ones",
+    "points": 10.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KAKW7S1MF06ABK1RV07MGX3R",
+    "playerID": "01KAKWGZWW1AJJXBA90PPMENH9",
+    "strategy_proportions": {
+      "Cheating": 0.1556,
+      "Honest_High": 0.4,
+      "Honest_Low": 0.4,
+      "Irrational": 0.0444
+    },
+    "strength": "not the best, took a while to understand rules",
+    "points": 65.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KAKW52ENV97BFT0MFWR5FV0T",
+    "playerID": "01KAKWH111MM5JNDVB96A33ENC",
+    "strategy_proportions": {
+      "Cheating": 0.3063,
+      "Honest_High": 0.1625,
+      "Honest_Low": 0.5188,
+      "Irrational": 0.0125
+    },
+    "strength": "I can see which decisions made me earn most profit and then sold accordingly afterwards which made me earn more profit",
+    "points": 37.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KAKW4XF2RKTNAVER5D5DNX7W",
+    "playerID": "01KAKWHAANKPY2GCBSD1EX52G6",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 0.62,
+      "Honest_Low": 0.38,
+      "Irrational": 0.0
+    },
+    "strength": "I feel as though my strength was reasonable. I was able to make the right decisions.",
+    "points": 49.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KAKBAERZM2ZSYDN9R2CAGHK0",
+    "playerID": "01KAKBE0Z39WNMC5XN2GD4SSEE",
+    "strategy_proportions": {
+      "Cheating": 0.3991,
+      "Honest_High": 0.103,
+      "Honest_Low": 0.3948,
+      "Irrational": 0.103
+    },
+    "strength": "PRETTY GOOD",
+    "points": 20.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KAKBAERZM2ZSYDN9R2CAGHK0",
+    "playerID": "01KAKBE2G069BXESRYXXD221CX",
+    "strategy_proportions": {
+      "Cheating": 0.2754,
+      "Honest_High": 0.2609,
+      "Honest_Low": 0.4638,
+      "Irrational": 0.0
+    },
+    "strength": "Decently strong",
+    "points": 42.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KAKAZRM83SF7TGTR0N5S436B",
+    "playerID": "01KAKBE9TZJYQA9FGYZCHXQ1T3",
+    "strategy_proportions": {
+      "Cheating": 0.2405,
+      "Honest_High": 0.4177,
+      "Honest_Low": 0.3165,
+      "Irrational": 0.0253
+    },
+    "strength": "Somewhat strong, tried to produce and advertise high mostly",
+    "points": 43.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KAKAZ80YHN2BVPKCDGFG0DX8",
+    "playerID": "01KAKBEYWXEXGR3YWQ17PKBEFC",
+    "strategy_proportions": {
+      "Cheating": 0.503,
+      "Honest_High": 0.3333,
+      "Honest_Low": 0.1333,
+      "Irrational": 0.0303
+    },
+    "strength": "I figured out a more consistent strategy towards the end",
+    "points": 22.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KAKET79VYQBMG50PFM36R36E",
+    "playerID": "01KAKEW2H1AWWD6XQE6JWGMJQW",
+    "strategy_proportions": {
+      "Cheating": 0.9474,
+      "Honest_High": 0.0526,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "..",
+    "points": 16.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KAKET79VYQBMG50PFM36R36E",
+    "playerID": "01KAKEW738T0BCG857CMAAEMMQ",
+    "strategy_proportions": {
+      "Cheating": 0.25,
+      "Honest_High": 0.5865,
+      "Honest_Low": 0.1635,
+      "Irrational": 0.0
+    },
+    "strength": "My strength was looking for which production and advertising combos got me the most profit.",
+    "points": 55.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KAKESZWH8TRCVX4E37RYCZZS",
+    "playerID": "01KAKEWHJV40WPJ5V3WDVMQMWH",
+    "strategy_proportions": {
+      "Cheating": 0.6846,
+      "Honest_High": 0.2385,
+      "Honest_Low": 0.0769,
+      "Irrational": 0.0
+    },
+    "strength": "Changing my answers",
+    "points": 30.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KAKESZWH8TRCVX4E37RYCZZS",
+    "playerID": "01KAKEWHR3V47A1FG9DHE8R9AM",
+    "strategy_proportions": {
+      "Cheating": 0.2941,
+      "Honest_High": 0.5176,
+      "Honest_Low": 0.1882,
+      "Irrational": 0.0
+    },
+    "strength": "I felt like my biggest strength was figuring out how much of each item to sell.",
+    "points": 31.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KAKAZAT79GBMZ88ZFVEWXK06",
+    "playerID": "01KAKEWVRE7F93JY8D6T8PH3N6",
+    "strategy_proportions": {
+      "Cheating": 0.3077,
+      "Honest_High": 0.432,
+      "Honest_Low": 0.2367,
+      "Irrational": 0.0237
+    },
+    "strength": "Being able to identify weak spots in my marketing strategies",
+    "points": 40.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KAKJ2TGPPYT014973M8M4ZDR",
+    "playerID": "01KAKJ7ABV0WC338TBJBFSTZJY",
+    "strategy_proportions": {
+      "Cheating": 0.4487,
+      "Honest_High": 0.1923,
+      "Honest_Low": 0.359,
+      "Irrational": 0.0
+    },
+    "strength": "Strength in the game was being able to see what products sold well and what products didn't sell well. I only sold products that had potential to make profit as well. ",
+    "points": 60.0
+  },
+  {
+    "week": "2025-11-21",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KAKJ2NB2ZBR0CA547AZ68FJM",
+    "playerID": "01KAKJ7F31GBN151PD1SC6MYKW",
+    "strategy_proportions": {
+      "Cheating": 0.425,
+      "Honest_High": 0.475,
+      "Honest_Low": 0.1,
+      "Irrational": 0.0
+    },
+    "strength": "My strength was being able to build up the reputation for the product. ",
+    "points": 26.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBQGY66ZET97NAAVJ8M94Y7K",
+    "playerID": "01KBQGZB0NCWK8A93YZ2FPFXXY",
+    "strategy_proportions": {
+      "Cheating": 0.3629,
+      "Honest_High": 0.4677,
+      "Honest_Low": 0.1452,
+      "Irrational": 0.0242
+    },
+    "strength": "honestly advertising most products to build trust and including some low quality but high advertised to increase profit",
+    "points": 51.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBQGY66ZET97NAAVJ8M94Y7K",
+    "playerID": "01KBQGZQHVA3KQYZKEG7YE91Z0",
+    "strategy_proportions": {
+      "Cheating": 0.4762,
+      "Honest_High": 0.2857,
+      "Honest_Low": 0.2381,
+      "Irrational": 0.0
+    },
+    "strength": "Speed, I am speed",
+    "points": 42.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBQHBMPWV6HQMN28QWQV2TYB",
+    "playerID": "01KBQHCAFZFE3SEWY1RW4EC9XV",
+    "strategy_proportions": {
+      "Cheating": 0.4058,
+      "Honest_High": 0.2681,
+      "Honest_Low": 0.0725,
+      "Irrational": 0.2536
+    },
+    "strength": "My strengths in this game was to build a good reputation and allow customers to gain trust in my product. However, I am not sure how well this strategy worked compared to others.",
+    "points": 57.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBQHBMPWV6HQMN28QWQV2TYB",
+    "playerID": "01KBQHD0132TDAWQSQQ1RKSZFK",
+    "strategy_proportions": {
+      "Cheating": 0.4771,
+      "Honest_High": 0.3072,
+      "Honest_Low": 0.2157,
+      "Irrational": 0.0
+    },
+    "strength": "Just a matter of trial and error, and figuring out what works and what doesnt. ",
+    "points": 35.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBQKS5M12ZWJ9MB8JN7P35FH",
+    "playerID": "01KBQKTEPD7H9PM5WEGEZW7NZN",
+    "strategy_proportions": {
+      "Cheating": 0.1,
+      "Honest_High": 0.1941,
+      "Honest_Low": 0.6647,
+      "Irrational": 0.0412
+    },
+    "strength": "i was able to understand that the customer audience was price contious",
+    "points": 79.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBQKX7PG22NP54654QE3M1YH",
+    "playerID": "01KBQKXHQWTFVK7JWE87N9FE8A",
+    "strategy_proportions": {
+      "Cheating": 0.0707,
+      "Honest_High": 0.3636,
+      "Honest_Low": 0.4848,
+      "Irrational": 0.0808
+    },
+    "strength": "Trying to figure out how to improve my profits.",
+    "points": 26.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBQKX7PG22NP54654QE3M1YH",
+    "playerID": "01KBQKY2GE1H6B4ZMVA4ZDV2X8",
+    "strategy_proportions": {
+      "Cheating": 0.2598,
+      "Honest_High": 0.5039,
+      "Honest_Low": 0.0866,
+      "Irrational": 0.1496
+    },
+    "strength": "The game was really nice. ",
+    "points": 41.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBQQ3QNP7KEZRGH70HV8TMG1",
+    "playerID": "01KBQQ5TTDNR3KQVRDAH65FMWB",
+    "strategy_proportions": {
+      "Cheating": 0.4819,
+      "Honest_High": 0.3855,
+      "Honest_Low": 0.0602,
+      "Irrational": 0.0723
+    },
+    "strength": "Changing strategies when it was necessary to adapt.",
+    "points": 48.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KBQQ3WWZPW1XS94JGBSEY1D2",
+    "playerID": "01KBQQ668A524M7AM22X9Q06PE",
+    "strategy_proportions": {
+      "Cheating": 0.459,
+      "Honest_High": 0.2705,
+      "Honest_Low": 0.1148,
+      "Irrational": 0.1557
+    },
+    "strength": "- I think I was pretty weak.",
+    "points": 13.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBQQ49ASVAABC4NTM9K00NC7",
+    "playerID": "01KBQQ6QQFAF279JQQN5VYXAYC",
+    "strategy_proportions": {
+      "Cheating": 0.082,
+      "Honest_High": 0.6803,
+      "Honest_Low": 0.1967,
+      "Irrational": 0.041
+    },
+    "strength": "i was average it took me a second to understand it",
+    "points": 20.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBQQ49ASVAABC4NTM9K00NC7",
+    "playerID": "01KBQQ6TNE6F7W7XF84Z8DV3YC",
+    "strategy_proportions": {
+      "Cheating": 0.161,
+      "Honest_High": 0.2203,
+      "Honest_Low": 0.6186,
+      "Irrational": 0.0
+    },
+    "strength": "building up reputation ",
+    "points": 55.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBQTN676EJQTDM4Q633Q1MYZ",
+    "playerID": "01KBQTS5F6BN7WQV8XCWZJNRB8",
+    "strategy_proportions": {
+      "Cheating": 0.0732,
+      "Honest_High": 0.5366,
+      "Honest_Low": 0.2927,
+      "Irrational": 0.0976
+    },
+    "strength": "honest, and producing high quality with high advertising so i can stake it ",
+    "points": 84.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBQTN676EJQTDM4Q633Q1MYZ",
+    "playerID": "01KBQTS8V24Y20Q90WWQCK2PP9",
+    "strategy_proportions": {
+      "Cheating": 0.1231,
+      "Honest_High": 0.6923,
+      "Honest_Low": 0.1846,
+      "Irrational": 0.0
+    },
+    "strength": "Selling the single premium product",
+    "points": 6.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBQTNADS0B32NY6K5PEV2KFD",
+    "playerID": "01KBQTSGNJYNB0TGVJ72R56X7H",
+    "strategy_proportions": {
+      "Cheating": 0.1626,
+      "Honest_High": 0.3577,
+      "Honest_Low": 0.1382,
+      "Irrational": 0.3415
+    },
+    "strength": "I would say my strength was not very well",
+    "points": 10.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBQTNADS0B32NY6K5PEV2KFD",
+    "playerID": "01KBQTSMG4PARCH3QC2QQ7JTQ1",
+    "strategy_proportions": {
+      "Cheating": 0.3111,
+      "Honest_High": 0.4889,
+      "Honest_Low": 0.2,
+      "Irrational": 0.0
+    },
+    "strength": "BUILD REPUTATION AND TRUST ",
+    "points": 81.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBQY1JRZPF89WB0HMQWQ93VW",
+    "playerID": "01KBQY37GVGCZMTZPNFYYJM0P5",
+    "strategy_proportions": {
+      "Cheating": 0.0,
+      "Honest_High": 0.95,
+      "Honest_Low": 0.0,
+      "Irrational": 0.05
+    },
+    "strength": "WELL ORGANIZED",
+    "points": 53.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBQY1JRZPF89WB0HMQWQ93VW",
+    "playerID": "01KBQY397T1CEVHM64MX96CDWC",
+    "strategy_proportions": {
+      "Cheating": 0.1905,
+      "Honest_High": 0.5,
+      "Honest_Low": 0.1429,
+      "Irrational": 0.1667
+    },
+    "strength": "i kept a high reputation",
+    "points": 18.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KBQY1EXMM1XR84R8BYNE2FPW",
+    "playerID": "01KBQY3WVWJ7P7MBHSP8B9Z4C7",
+    "strategy_proportions": {
+      "Cheating": 0.3231,
+      "Honest_High": 0.3692,
+      "Honest_Low": 0.3077,
+      "Irrational": 0.0
+    },
+    "strength": "Not going with the shake all the time",
+    "points": 26.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBR1KFQ8R9FKY37WRNT47GFP",
+    "playerID": "01KBR1MJBTYNC4PWMVFVAF6F78",
+    "strategy_proportions": {
+      "Cheating": 0.3,
+      "Honest_High": 0.2333,
+      "Honest_Low": 0.2,
+      "Irrational": 0.2667
+    },
+    "strength": "Great",
+    "points": 39.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBR1K48M8PFHM3QT1NBWHQ8N",
+    "playerID": "01KBR1P2VE39P2H35002C1J3NS",
+    "strategy_proportions": {
+      "Cheating": 0.1987,
+      "Honest_High": 0.3907,
+      "Honest_Low": 0.4106,
+      "Irrational": 0.0
+    },
+    "strength": "Ablity to recongize when to place high vs low ",
+    "points": 102.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KBR1JS3X6K2FCFW05GAJNZX5",
+    "playerID": "01KBR1SBMA0CRJG5PXVFR7RQ12",
+    "strategy_proportions": {
+      "Cheating": 0.5808,
+      "Honest_High": 0.2335,
+      "Honest_Low": 0.1617,
+      "Irrational": 0.024
+    },
+    "strength": "Selling for high profit",
+    "points": 84.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KBR4WG4XVGREZQF205MTE9T8",
+    "playerID": "01KBR506WF72M2T0HHTYXJ64N8",
+    "strategy_proportions": {
+      "Cheating": 0.3037,
+      "Honest_High": 0.4815,
+      "Honest_Low": 0.1407,
+      "Irrational": 0.0741
+    },
+    "strength": "I took many risks.",
+    "points": 15.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBR4VXGANPK8ME82Z719CT80",
+    "playerID": "01KBR50DHEW5F0VV250E928DGJ",
+    "strategy_proportions": {
+      "Cheating": 0.0172,
+      "Honest_High": 0.5345,
+      "Honest_Low": 0.0517,
+      "Irrational": 0.3966
+    },
+    "strength": "High",
+    "points": 41.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBR4VXGANPK8ME82Z719CT80",
+    "playerID": "01KBR50DVABT28KPZ8Y81178SR",
+    "strategy_proportions": {
+      "Cheating": 0.0952,
+      "Honest_High": 0.9048,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "I firstly tried to use combination of products. Later on i realized staking can maximize my profit so I used High product and high advertise and stake so that's how I get this result.",
+    "points": 45.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBR4W4Z3TY4V8TH1KPKDX8BM",
+    "playerID": "01KBR50XV5E6VY0670RM84C5G8",
+    "strategy_proportions": {
+      "Cheating": 0.32,
+      "Honest_High": 0.68,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0
+    },
+    "strength": "My strength in this game was to maintain profits for each round, every round I was able to get profits no matter what, I also kept ratings high until the very end. ",
+    "points": 96.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBR4W4Z3TY4V8TH1KPKDX8BM",
+    "playerID": "01KBR50YQ3GV9S4G5X837GSRZJ",
+    "strategy_proportions": {
+      "Cheating": 0.2846,
+      "Honest_High": 0.5615,
+      "Honest_Low": 0.1538,
+      "Irrational": 0.0
+    },
+    "strength": "honesty and willing to go for quality",
+    "points": 28.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KBR1KCGX11VPB8GZ1PGC8SK5",
+    "playerID": "01KBR8QRN4J6W162VJPR1N7J7J",
+    "strategy_proportions": {
+      "Cheating": 0.0631,
+      "Honest_High": 0.8559,
+      "Honest_Low": 0.045,
+      "Irrational": 0.036
+    },
+    "strength": "Strong",
+    "points": 28.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KBR1KCGX11VPB8GZ1PGC8SK5",
+    "playerID": "01KBR8R0Z68MN105WBQT92KJFC",
+    "strategy_proportions": {
+      "Cheating": 0.1216,
+      "Honest_High": 0.3514,
+      "Honest_Low": 0.4324,
+      "Irrational": 0.0946
+    },
+    "strength": "It's a little bit confused at the beginning",
+    "points": 58.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and Reputation",
+    "gameID": "01KBR8QKZAAH5ZSESQKPPGZQWD",
+    "playerID": "01KBR8SBADN6M00K421NE0652R",
+    "strategy_proportions": {
+      "Cheating": 0.4257,
+      "Honest_High": 0.495,
+      "Honest_Low": 0.0792,
+      "Irrational": 0.0
+    },
+    "strength": "Low as there was not much detail",
+    "points": 68.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking but with Reputation",
+    "gameID": "01KBR8RDVCG80HRP0Y5SHA6VS2",
+    "playerID": "01KBR8T02R5HMBZTHQS5XY8P7N",
+    "strategy_proportions": {
+      "Cheating": 0.1944,
+      "Honest_High": 0.3889,
+      "Honest_Low": 0.2917,
+      "Irrational": 0.125
+    },
+    "strength": "poor",
+    "points": 51.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KBQEGZ3JKMHJZNZ349R84S23",
+    "playerID": "01KBQEHAW4XMV1WMVD1CD0WGHZ",
+    "strategy_proportions": {
+      "Cheating": 0.0355,
+      "Honest_High": 0.305,
+      "Honest_Low": 0.4752,
+      "Irrational": 0.1844
+    },
+    "strength": "Meh",
+    "points": 36.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "No Staking and No Reputation",
+    "gameID": "01KBQEGZ3JKMHJZNZ349R84S23",
+    "playerID": "01KBQEJZ60XDX78HJ2D34V59BC",
+    "strategy_proportions": {
+      "Cheating": 0.2517,
+      "Honest_High": 0.2517,
+      "Honest_Low": 0.4901,
+      "Irrational": 0.0066
+    },
+    "strength": "Poor",
+    "points": 46.0
+  },
+  {
+    "week": "2025-12-05",
+    "treatmentName": "With Staking and No Reputation",
+    "gameID": "01KBQEH4XCCBM4WBG537N08QC7",
+    "playerID": "01KBQEK3Y196HYTHPN78SRV6HW",
+    "strategy_proportions": {
+      "Cheating": 0.413,
+      "Honest_High": 0.5326,
+      "Honest_Low": 0.0,
+      "Irrational": 0.0543
+    },
+    "strength": "not sure",
+    "points": 54.0
+  }
+];
+
+const STRATEGY_ORDER=['Cheating','Honest_High','Honest_Low','Irrational'];
+const STRATEGY_COLORS={Cheating:'#b62450',Honest_High:'#3e79ff',Honest_Low:'#84eefd',Irrational:'#b85fda'};
+
+const VARIANT_ORDER=['No Staking and No Reputation','No Staking but with Reputation','With Staking and No Reputation','With Staking and Reputation'];
+const VARIANT_LABELS={'No Staking and No Reputation':'No Stakes \u00b7 No Reputation','No Staking but with Reputation':'No Stakes \u00b7 Reputation','With Staking and No Reputation':'Stakes \u00b7 No Reputation','With Staking and Reputation':'Stakes \u00b7 Reputation'};
+const VARIANT_COLORS={'No Staking and No Reputation':'#1e1840','No Staking but with Reputation':'#142e33','With Staking and No Reputation':'#2e1538','With Staking and Reputation':'#14233c'};
+
+const WEEK_ORDER=['2025-11-07','2025-11-14','2025-11-21','2025-12-05'];
+const WEEK_LABELS={'2025-11-07':'Week 1','2025-11-14':'Week 2','2025-11-21':'Week 3','2025-12-05':'Week 4'};
+const WEEK_PARAMS={'2025-11-07':{lq:3,hq:5,sb:14,bb:12},'2025-11-14':{lq:3,hq:5,sb:56,bb:12},'2025-11-21':{lq:2,hq:5,sb:36,bb:12},'2025-12-05':{lq:3,hq:8,sb:60,bb:18}};
+
+function getWeekColor(vk,wi){const b=d3.hsl(VARIANT_COLORS[vk]);const lO=[0,.04,.08,.12],sO=[0,.05,-.03,.08];b.l=Math.max(.10,Math.min(.30,b.l+lO[wi]));b.s=Math.max(.15,Math.min(.60,b.s+sO[wi]));return b.formatHex();}
+
+const SIZE=1100,CENTER=SIZE/2;
+const R_SI=80,R_SO=370,R_WI=395,R_WO=435,R_VI=440,R_VO=500;
+const VG=.04,WG=.02,SG=.004;
+
+function buildH(data){const tot=data.length,variants=[];for(const vr of VARIANT_ORDER){const vd=data.filter(d=>d.treatmentName===vr);if(!vd.length)continue;const weeks=[];for(const wk of WEEK_ORDER){const wd=vd.filter(d=>d.week===wk);if(!wd.length)continue;wd.sort((a,b)=>((b.strategy_proportions||{}).Cheating||0)-((a.strategy_proportions||{}).Cheating||0));weeks.push({week:wk,sellers:wd,sc:wd.length});}variants.push({tn:vr,weeks,sc:vd.length});}return{variants,tot};}
+
+function compA(h){const{variants,tot}=h,av=2*Math.PI-variants.length*VG;let cur=-Math.PI/2;const res=[];for(const vr of variants){const vA=(vr.sc/tot)*av,vS=cur,vE=vS+vA;const wGT=vr.weeks.length*WG,vDA=vA-wGT;let wA2=vS;const wR=[];for(let wi=0;wi<vr.weeks.length;wi++){const wk=vr.weeks[wi];wA2+=WG/2;const wkA=(wk.sc/vr.sc)*vDA,wS=wA2,wE=wS+wkA;const ns=wk.sellers.length,sGT=Math.max(0,ns-1)*SG,wDA2=wkA-sGT;let sA=wS;const sR=[];for(let si=0;si<ns;si++){if(si>0)sA+=SG;const selA=wDA2/ns;sR.push({...wk.sellers[si],sa:sA,ea:sA+selA});sA+=selA;}wR.push({week:wk.week,wi,sa:wS,ea:wE,sellers:sR});wA2=wE+WG/2;}res.push({tn:vr.tn,sa:vS,ea:vE,weeks:wR});cur=vE+VG;}return res;}
+
+function render(ad){
+  const svg=d3.select('#chart').attr('width',SIZE).attr('height',SIZE).append('g').attr('transform',`translate(${CENTER},${CENTER})`);
+  const tip=d3.select('#tooltip'),arc=d3.arc();
+  for(const vr of ad){
+    svg.append('path').attr('d',arc({innerRadius:R_VI,outerRadius:R_VO,startAngle:vr.sa,endAngle:vr.ea})).attr('fill',VARIANT_COLORS[vr.tn]).attr('stroke','#08090d').attr('stroke-width',.8);
+    const vM=(vr.sa+vr.ea)/2,vRad=(R_VI+R_VO)/2,vx=Math.cos(vM-Math.PI/2)*vRad,vy=Math.sin(vM-Math.PI/2)*vRad;
+    let vRt=vM*180/Math.PI;if(vRt>90&&vRt<270)vRt+=180;
+    svg.append('text').attr('x',vx).attr('y',vy).attr('text-anchor','middle').attr('dominant-baseline','central').attr('transform',`rotate(${vRt},${vx},${vy})`).attr('fill','#b0b3bc').attr('font-size','13px').attr('font-weight','700').attr('font-family',"'DM Sans',sans-serif").text(VARIANT_LABELS[vr.tn]);
+    for(const wk of vr.weeks){
+      const wc=getWeekColor(vr.tn,wk.wi);
+      svg.append('path').attr('d',arc({innerRadius:R_WI,outerRadius:R_WO,startAngle:wk.sa,endAngle:wk.ea})).attr('fill',wc).attr('stroke','#08090d').attr('stroke-width',.6);
+      const wM=(wk.sa+wk.ea)/2,wRad=(R_WI+R_WO)/2,wx=Math.cos(wM-Math.PI/2)*wRad,wy=Math.sin(wM-Math.PI/2)*wRad;
+      let wRot=wM*180/Math.PI;if(wRot>90&&wRot<270)wRot+=180;
+      const aL=(wk.ea-wk.sa)*wRad;
+      if(aL>30){svg.append('text').attr('x',wx).attr('y',wy).attr('text-anchor','middle').attr('dominant-baseline','central').attr('transform',`rotate(${wRot},${wx},${wy})`).attr('fill','#8a8d95').attr('font-size',aL>70?'12px':aL>45?'10px':'8px').attr('font-weight','700').attr('font-family',"'DM Sans',sans-serif").text(WEEK_LABELS[wk.week]);}
+      for(const sel of wk.sellers){
+        const sp=sel.strategy_proportions||{};let cR=R_SI;
+        for(const st of STRATEGY_ORDER){
+          const p=sp[st]||0;if(p<=0)continue;const oR=cR+p*(R_SO-R_SI);
+          svg.append('path').attr('d',arc({innerRadius:cR,outerRadius:oR,startAngle:sel.sa,endAngle:sel.ea})).attr('fill',STRATEGY_COLORS[st]).attr('stroke','#08090d').attr('stroke-width',.3).attr('opacity',.92).attr('class','seller-arc').attr('data-player',sel.playerID)
+            .on('mouseenter',function(){svg.selectAll('.seller-arc').attr('opacity',.18);svg.selectAll(`.seller-arc[data-player="${sel.playerID}"]`).attr('opacity',1);
+              const wp2=WEEK_PARAMS[wk.week]||{};let h=`<div class="tt-label">${sel.playerID}</div>`;
+              h+=`<div class="tt-row"><span class="tt-key">Variant</span><span class="tt-val">${VARIANT_LABELS[vr.tn]}</span></div>`;
+              h+=`<div class="tt-row"><span class="tt-key">Week</span><span class="tt-val">${WEEK_LABELS[wk.week]}</span></div>`;
+              if(sel.points!=null)h+=`<div class="tt-row"><span class="tt-key">Score</span><span class="tt-val" style="color:#f1c40f">${sel.points}</span></div>`;
+              h+=`<div class="tt-bar">`;for(const s of STRATEGY_ORDER){const pc=(sp[s]||0)*100;if(pc>0)h+=`<div style="width:${pc}%;background:${STRATEGY_COLORS[s]}"></div>`;}h+=`</div>`;
+              for(const s of STRATEGY_ORDER)h+=`<div class="tt-row"><span class="tt-key">${s.replace('_',' ')}</span><span class="tt-val">${((sp[s]||0)*100).toFixed(1)}%</span></div>`;
+              if(sel.strength)h+=`<div class="tt-strength">"${sel.strength}"</div>`;tip.html(h).classed('visible',true);})
+            .on('mousemove',function(e){tip.style('left',(e.clientX+16)+'px').style('top',(e.clientY-10)+'px');})
+            .on('mouseleave',function(){svg.selectAll('.seller-arc').attr('opacity',.92);tip.classed('visible',false);});
+          cR=oR;
+        }
+        if(sel.points!=null){const labelR=(R_SO+R_WI)/2,sMid=(sel.sa+sel.ea)/2,lx=Math.cos(sMid-Math.PI/2)*labelR,ly=Math.sin(sMid-Math.PI/2)*labelR;let sRot=sMid*180/Math.PI;if(sRot>90&&sRot<270)sRot+=180;svg.append('text').attr('x',lx).attr('y',ly).attr('text-anchor','middle').attr('dominant-baseline','central').attr('transform',`rotate(${sRot},${lx},${ly})`).attr('fill','#ffffff').attr('font-size','8.5px').attr('font-weight','700').attr('font-family',"'JetBrains Mono',monospace").text(Math.round(sel.points));}
+      }
+    }
+  }
+  svg.append('circle').attr('cx',0).attr('cy',0).attr('r',R_SI-5).attr('fill','#08090d').attr('stroke','#1e2030').attr('stroke-width',1.2);
+  svg.append('text').attr('text-anchor','middle').attr('y',-6).attr('fill','#9a9db0').attr('font-size','31px').attr('font-weight','700').attr('font-family',"'DM Sans',sans-serif").text(DATA.length);
+  svg.append('text').attr('text-anchor','middle').attr('y',18).attr('fill','#5a5d6d').attr('font-size','14px').attr('font-weight','700').attr('font-family',"'DM Sans',sans-serif").text('sellers');
+}
+
+function renderLegend(){const el=document.getElementById('legend');for(const st of STRATEGY_ORDER){const d=document.createElement('div');d.className='legend-item';d.innerHTML=`<div class="legend-swatch" style="background:${STRATEGY_COLORS[st]}"></div>${st.replace('_',' ')}`;el.appendChild(d);}}
+
+const hierarchy=buildH(DATA);const angles=compA(hierarchy);renderLegend();render(angles);
+</script>
+
+</div><!-- end #chart-section -->
+
+<!-- ── ARTICLE SECTION ── -->
+
+<div class="hero">
+  <h1>Visualizing How Players Think in a Digital Marketplace Experiment</h1>
+  <p class="lede">After four weeks of running a marketplace experiment in person, I had 161 sellers’ performance data and their own perception of how they played. This is about the chart I built to connect the two — and what it revealed.</p>
+</div>
+
+<article>
+
+  <p>The fun thing about watching people play a game you helped build is that you get a fresh perspective you no longer have yourself. I would walk around the room between rounds, catching bits of conversation, watching decisions being made in real time. When the session ended and players filled out their exit surveys, I would sometimes find myself reading their responses as they wrote — small glimpses into how each person understood the game and their own performance.</p>
+
+  <p>The problem was that those opinions were too much to assess at once. 161 rows. A score, a strategy breakdown across the full game, and a free-text field where each seller described what they thought their strength was. The insights were in there — I just had no way to see a player’s performance and their own explanation of it at the same time. That disconnect is what motivated the chart.</p>
+
+  <p>For the past several months I have been building and running experiments at the <strong>Platform Governance Lab</strong>, a research group focused on understanding how digital marketplaces work — and how they fail. The core question we are investigating: what mechanisms actually prevent fraud in online markets? To study this, we designed a marketplace simulation — a game where participants take on the role of sellers and buyers over multiple rounds. As a seller, each round you decide what quality product to list and whether to represent it honestly. The game mirrors the structure of real platforms like eBay or Amazon, but in a controlled environment where we can observe every decision.</p>
+
+  <p>We ran four versions of the market, varying two fraud-deterrence mechanisms: <strong>staking</strong> — where sellers escrow money alongside a listing, forfeiting it if caught misrepresenting their product — and <strong>reputation</strong>, the familiar system of reviews and ratings, with an added option to rebrand and re-enter with a fresh score. Every combination was tested across four weeks. After each session, players filled out a short exit survey describing their strategy and what they thought their strength was.</p>
+
+  <span class="section-tag">The Problem</span>
+  <h2>The challenge: analyzing different aspects of performance in one visual.</h2>
+
+  <p>Each seller had a market variant, a week, a final score, a breakdown of how often they chose each of four strategies, and a sentence or two describing their approach. These are genuinely different types of information — categorical, temporal, numeric, proportional, qualitative — and connecting them in a conventional chart is nearly impossible without losing something.</p>
+
+  <div class="pills">
+    <div class="pill"><div class="dot" style="background:#b62451"></div> Cheating</div>
+    <div class="pill"><div class="dot" style="background:#3e62ef"></div> Honest High Quality</div>
+    <div class="pill"><div class="dot" style="background:#84ceeb"></div> Honest Low Quality</div>
+    <div class="pill"><div class="dot" style="background:#b35edc"></div> Irrational</div>
+  </div>
+  <p style="font-size:0.88rem; color:var(--muted); line-height:1.75; margin-top:-8px;"><strong style="color:var(--text); font-weight:500;">Cheating</strong> — advertising high quality but producing low quality. <strong style="color:var(--text); font-weight:500;">Honest High</strong> — advertising high quality and producing high quality. <strong style="color:var(--text); font-weight:500;">Honest Low</strong> — advertising low quality and producing low quality. <strong style="color:var(--text); font-weight:500;">Irrational</strong> — advertising low quality but producing high quality, leaving profit on the table for no clear reason.</p>
+
+  <p>I could make a bar chart of strategy proportions. I could make a scatter plot of score versus cheating rate. But none of those would let me answer the question I actually cared about: <em>why was this particular person playing this way?</em> For that, I needed the score, the strategy, the market context, and the seller’s own words — all at once, for all 161 people.</p>
+
+  <span class="section-tag">The Solution</span>
+  <h2>The approach: a nested sunburst that combines all five layers.</h2>
+
+  <p>I built a nested sunburst — a circular chart organized from the outside in. The outer ring shows the market variant. Inside that, the week. Inside that, each individual seller as a wedge, with color layers showing their strategy proportions, sorted within each week by cheating proportion. Their final score sits in the gap between the seller wedges and the week ring.</p>
+
+  <p>The part that made it actually useful: hover over any seller’s wedge and everything else fades. The tooltip shows their score, their strategy breakdown, and — at the bottom, in italics — exactly what they wrote in the exit survey. Suddenly the data had a voice.</p>
+
+  <span class="section-tag">The Observations</span>
+  <h2>What the visual revealed about how players actually behaved.</h2>
+
+  <p>Twenty minutes in, I had already grouped every player into one of four types — not by running a clustering algorithm, but simply by reading the visual:</p>
+
+  <div class="types">
+    <div class="type-card">
+      <div class="tc-name">Always Honest</div>
+      <div class="tc-desc">Mostly blue wedges across all conditions. Same strategy regardless of incentives.</div>
+    </div>
+    <div class="type-card">
+      <div class="tc-name">Confused</div>
+      <div class="tc-desc">High irrational proportions. The tooltips confirmed it — they genuinely didn’t understand the game.</div>
+    </div>
+    <div class="type-card">
+      <div class="tc-name">Reputation Builders</div>
+      <div class="tc-desc">Honest early, more risk-taking later. Building trust as a foundation first.</div>
+    </div>
+    <div class="type-card">
+      <div class="tc-name">Risk Calculators</div>
+      <div class="tc-desc">High cheating without staking, low with it. Pure expected-value players.</div>
+    </div>
+  </div>
+
+  <p>Some of the individual reviews I found were genuinely worth pausing on. Here are a few that stood out:</p>
+
+  <div class="callout" style="margin-bottom:14px;">
+    <div class="callout-label" style="color:var(--accent);">Stakes · Reputation — Week 3 · Score: 20</div>
+    <p>“At first when I had no reputation, it was hard to get people to buy my products even when they were advertised as high quality. I felt like I had no power without the stake to convince buyers to purchase my products.”</p>
+  </div>
+  <p>This player scored only 20 points — but their reasoning was the sharpest in the dataset. With 63% cheating and 37% honest-high, they were far from conservative. What makes the response remarkable is the articulation: at the start of a market, reputation is neutral and means nothing. Staking is the only credible signal available because it costs something. They felt that gap directly, and named it. The score doesn’t reflect the quality of the thinking.</p>
+
+  <div class="callout" style="margin-bottom:14px;">
+    <div class="callout-label" style="color:var(--accent);">No Stakes · Reputation — Week 4 · Score: 102</div>
+    <p>“Ability to recognize when to place high vs low.”</p>
+  </div>
+  <p>One hundred and two points — and the response is almost understated. The data tells the fuller story: 39% honest-high, 41% honest-low, and only 20% cheating. This player read the market condition each round and adjusted accordingly. That kind of adaptive switching across strategies is exactly the kind of behaviour that is hard to see in a table but immediately visible in the chart.</p>
+
+  <div class="callout" style="margin-bottom:14px;">
+    <div class="callout-label" style="color:var(--accent);">No Stakes · Reputation — Week 3 · Score: 26</div>
+    <p>“My strength was being able to build up the reputation for the product.”</p>
+  </div>
+  <p>A score of 26 with 42% cheating and 47% honest-high in a no-staking, reputation-only market. My guess at the strategy: produce honestly in the early rounds to build a good reputation, then cheat and exit — re-entering under a fresh brand name to reset the score and repeat the cycle. In a market with no staking, nothing stops that loop. The chart shows the pattern; the tooltip tells you what they thought they were doing.</p>
+
+  <p>That is what the visual gave me: not just a summary of what 161 people did, but a way to find the ones worth paying attention to. The messy, unstructured data became navigable. The outliers became visible. And a dataset that would have taken days to work through became a 20-minute conversation.</p>
+
+  <hr>
+  <p class="footnote">Built with D3.js. Data from in-person sessions at the Platform Governance Lab, November–December 2025. All player IDs are anonymized.</p>
+
+</article>
+
+
+</body>
+</html>
