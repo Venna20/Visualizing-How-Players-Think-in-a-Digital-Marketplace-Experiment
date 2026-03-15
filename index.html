@@ -268,6 +268,11 @@
   <h1>Digital Marketplace Experiment &mdash; Seller Strategy Breakdown</h1>
 </header>
 <div class="legend" id="legend"></div>
+<div id="controls">
+  <label>Center strategy:</label>
+  <span id="current-base"></span>
+  <button id="rotate-btn">Rotate &rarr;</button>
+</div>
 <div id="chart-container"><svg id="chart"></svg></div>
 <div id="tooltip"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
@@ -2529,8 +2534,15 @@ const DATA = [
   }
 ];
 
-const STRATEGY_ORDER=['Cheating','Honest_High','Honest_Low','Irrational'];
-const STRATEGY_COLORS={Cheating:'#b62450',Honest_High:'#3e79ff',Honest_Low:'#84eefd',Irrational:'#b85fda'};
+const ALL_STRATEGIES=['Cheating','Honest_High','Honest_Low','Irrational'];
+const STRATEGY_COLORS={Cheating:'#a11171',Honest_High:'#2b9fff',Honest_Low:'#87ceeb',Irrational:'#b25edc'};
+
+let rotationIndex=0;
+function getStrategyOrder(){
+  const o=[];
+  for(let i=0;i<4;i++) o.push(ALL_STRATEGIES[(rotationIndex+i)%4]);
+  return o;
+}
 
 const VARIANT_ORDER=['No Staking and No Reputation','No Staking but with Reputation','With Staking and No Reputation','With Staking and Reputation'];
 const VARIANT_LABELS={'No Staking and No Reputation':'No Stakes \u00b7 No Reputation','No Staking but with Reputation':'No Stakes \u00b7 Reputation','With Staking and No Reputation':'Stakes \u00b7 No Reputation','With Staking and Reputation':'Stakes \u00b7 Reputation'};
@@ -2546,25 +2558,27 @@ const SIZE=1100,CENTER=SIZE/2;
 const R_SI=80,R_SO=370,R_WI=395,R_WO=435,R_VI=440,R_VO=500;
 const VG=.04,WG=.02,SG=.004;
 
-function buildH(data){const tot=data.length,variants=[];for(const vr of VARIANT_ORDER){const vd=data.filter(d=>d.treatmentName===vr);if(!vd.length)continue;const weeks=[];for(const wk of WEEK_ORDER){const wd=vd.filter(d=>d.week===wk);if(!wd.length)continue;wd.sort((a,b)=>((b.strategy_proportions||{}).Cheating||0)-((a.strategy_proportions||{}).Cheating||0));weeks.push({week:wk,sellers:wd,sc:wd.length});}variants.push({tn:vr,weeks,sc:vd.length});}return{variants,tot};}
+function buildH(data){const sortKey=ALL_STRATEGIES[rotationIndex];const tot=data.length,variants=[];for(const vr of VARIANT_ORDER){const vd=data.filter(d=>d.treatmentName===vr);if(!vd.length)continue;const weeks=[];for(const wk of WEEK_ORDER){const wd=vd.filter(d=>d.week===wk);if(!wd.length)continue;wd.sort((a,b)=>((b.strategy_proportions||{})[sortKey]||0)-((a.strategy_proportions||{})[sortKey]||0));weeks.push({week:wk,sellers:wd,sc:wd.length});}variants.push({tn:vr,weeks,sc:vd.length});}return{variants,tot};}
 
 function compA(h){const{variants,tot}=h,av=2*Math.PI-variants.length*VG;let cur=-Math.PI/2;const res=[];for(const vr of variants){const vA=(vr.sc/tot)*av,vS=cur,vE=vS+vA;const wGT=vr.weeks.length*WG,vDA=vA-wGT;let wA2=vS;const wR=[];for(let wi=0;wi<vr.weeks.length;wi++){const wk=vr.weeks[wi];wA2+=WG/2;const wkA=(wk.sc/vr.sc)*vDA,wS=wA2,wE=wS+wkA;const ns=wk.sellers.length,sGT=Math.max(0,ns-1)*SG,wDA2=wkA-sGT;let sA=wS;const sR=[];for(let si=0;si<ns;si++){if(si>0)sA+=SG;const selA=wDA2/ns;sR.push({...wk.sellers[si],sa:sA,ea:sA+selA});sA+=selA;}wR.push({week:wk.week,wi,sa:wS,ea:wE,sellers:sR});wA2=wE+WG/2;}res.push({tn:vr.tn,sa:vS,ea:vE,weeks:wR});cur=vE+VG;}return res;}
 
 function render(ad){
+  d3.select('#chart').selectAll('*').remove();
+  const STRATEGY_ORDER=getStrategyOrder();
   const svg=d3.select('#chart').attr('width',SIZE).attr('height',SIZE).append('g').attr('transform',`translate(${CENTER},${CENTER})`);
   const tip=d3.select('#tooltip'),arc=d3.arc();
   for(const vr of ad){
     svg.append('path').attr('d',arc({innerRadius:R_VI,outerRadius:R_VO,startAngle:vr.sa,endAngle:vr.ea})).attr('fill',VARIANT_COLORS[vr.tn]).attr('stroke','#08090d').attr('stroke-width',.8);
     const vM=(vr.sa+vr.ea)/2,vRad=(R_VI+R_VO)/2,vx=Math.cos(vM-Math.PI/2)*vRad,vy=Math.sin(vM-Math.PI/2)*vRad;
     let vRt=vM*180/Math.PI;if(vRt>90&&vRt<270)vRt+=180;
-    svg.append('text').attr('x',vx).attr('y',vy).attr('text-anchor','middle').attr('dominant-baseline','central').attr('transform',`rotate(${vRt},${vx},${vy})`).attr('fill','#b0b3bc').attr('font-size','13px').attr('font-weight','700').attr('font-family',"'DM Sans',sans-serif").text(VARIANT_LABELS[vr.tn]);
+    svg.append('text').attr('x',vx).attr('y',vy).attr('text-anchor','middle').attr('dominant-baseline','central').attr('transform',`rotate(${vRt},${vx},${vy})`).attr('fill','#b0b3bc').attr('font-size','12px').attr('font-weight','700').attr('font-family',"'DM Sans',sans-serif").text(VARIANT_LABELS[vr.tn]);
     for(const wk of vr.weeks){
       const wc=getWeekColor(vr.tn,wk.wi);
       svg.append('path').attr('d',arc({innerRadius:R_WI,outerRadius:R_WO,startAngle:wk.sa,endAngle:wk.ea})).attr('fill',wc).attr('stroke','#08090d').attr('stroke-width',.6);
       const wM=(wk.sa+wk.ea)/2,wRad=(R_WI+R_WO)/2,wx=Math.cos(wM-Math.PI/2)*wRad,wy=Math.sin(wM-Math.PI/2)*wRad;
       let wRot=wM*180/Math.PI;if(wRot>90&&wRot<270)wRot+=180;
       const aL=(wk.ea-wk.sa)*wRad;
-      if(aL>30){svg.append('text').attr('x',wx).attr('y',wy).attr('text-anchor','middle').attr('dominant-baseline','central').attr('transform',`rotate(${wRot},${wx},${wy})`).attr('fill','#8a8d95').attr('font-size',aL>70?'12px':aL>45?'10px':'8px').attr('font-weight','700').attr('font-family',"'DM Sans',sans-serif").text(WEEK_LABELS[wk.week]);}
+      if(aL>30){svg.append('text').attr('x',wx).attr('y',wy).attr('text-anchor','middle').attr('dominant-baseline','central').attr('transform',`rotate(${wRot},${wx},${wy})`).attr('fill','#8a8d95').attr('font-size',aL>70?'11px':aL>45?'9px':'7px').attr('font-weight','500').attr('font-family',"'DM Sans',sans-serif").text(WEEK_LABELS[wk.week]);}
       for(const sel of wk.sellers){
         const sp=sel.strategy_proportions||{};let cR=R_SI;
         for(const st of STRATEGY_ORDER){
@@ -2575,6 +2589,7 @@ function render(ad){
               h+=`<div class="tt-row"><span class="tt-key">Variant</span><span class="tt-val">${VARIANT_LABELS[vr.tn]}</span></div>`;
               h+=`<div class="tt-row"><span class="tt-key">Week</span><span class="tt-val">${WEEK_LABELS[wk.week]}</span></div>`;
               if(sel.points!=null)h+=`<div class="tt-row"><span class="tt-key">Score</span><span class="tt-val" style="color:#f1c40f">${sel.points}</span></div>`;
+              h+=`<div class="tt-row"><span class="tt-key">Pricing</span><span class="tt-val">LQ:${wp2.lq} HQ:${wp2.hq} SB:${wp2.sb} BB:${wp2.bb}</span></div>`;
               h+=`<div class="tt-bar">`;for(const s of STRATEGY_ORDER){const pc=(sp[s]||0)*100;if(pc>0)h+=`<div style="width:${pc}%;background:${STRATEGY_COLORS[s]}"></div>`;}h+=`</div>`;
               for(const s of STRATEGY_ORDER)h+=`<div class="tt-row"><span class="tt-key">${s.replace('_',' ')}</span><span class="tt-val">${((sp[s]||0)*100).toFixed(1)}%</span></div>`;
               if(sel.strength)h+=`<div class="tt-strength">"${sel.strength}"</div>`;tip.html(h).classed('visible',true);})
@@ -2587,13 +2602,32 @@ function render(ad){
     }
   }
   svg.append('circle').attr('cx',0).attr('cy',0).attr('r',R_SI-5).attr('fill','#08090d').attr('stroke','#1e2030').attr('stroke-width',1.2);
-  svg.append('text').attr('text-anchor','middle').attr('y',-6).attr('fill','#9a9db0').attr('font-size','31px').attr('font-weight','700').attr('font-family',"'DM Sans',sans-serif").text(DATA.length);
-  svg.append('text').attr('text-anchor','middle').attr('y',18).attr('fill','#5a5d6d').attr('font-size','14px').attr('font-weight','700').attr('font-family',"'DM Sans',sans-serif").text('sellers');
+  svg.append('text').attr('text-anchor','middle').attr('y',-6).attr('fill','#9a9db0').attr('font-size','30px').attr('font-weight','700').attr('font-family',"'DM Sans',sans-serif").text(DATA.length);
+  svg.append('text').attr('text-anchor','middle').attr('y',18).attr('fill','#5a5d6d').attr('font-size','13px').attr('font-weight','500').attr('font-family',"'DM Sans',sans-serif").text('sellers');
 }
 
-function renderLegend(){const el=document.getElementById('legend');for(const st of STRATEGY_ORDER){const d=document.createElement('div');d.className='legend-item';d.innerHTML=`<div class="legend-swatch" style="background:${STRATEGY_COLORS[st]}"></div>${st.replace('_',' ')}`;el.appendChild(d);}}
+function renderLegend(){const el=document.getElementById('legend');for(const st of ALL_STRATEGIES){const d=document.createElement('div');d.className='legend-item';d.innerHTML=`<div class="legend-swatch" style="background:${STRATEGY_COLORS[st]}"></div>${st.replace('_',' ')}`;el.appendChild(d);}}
 
-const hierarchy=buildH(DATA);const angles=compA(hierarchy);renderLegend();render(angles);
+function updateBaseLabel(){
+  const base=ALL_STRATEGIES[rotationIndex];
+  const el=document.getElementById('current-base');
+  el.textContent=base.replace('_',' ');
+  el.style.background=STRATEGY_COLORS[base];
+  el.style.color='#ffffff';
+}
+
+const hierarchy=buildH(DATA);
+const angles=compA(hierarchy);
+renderLegend();
+updateBaseLabel();
+render(angles);
+
+document.getElementById('rotate-btn').addEventListener('click',function(){
+  rotationIndex=(rotationIndex+1)%4;
+  updateBaseLabel();
+  const h=buildH(DATA),a=compA(h);
+  render(a);
+});
 </script>
 
 </div><!-- end #chart-section -->
@@ -2637,6 +2671,8 @@ const hierarchy=buildH(DATA);const angles=compA(hierarchy);renderLegend();render
   <p>I built a nested sunburst — a circular chart organized from the outside in. The outer ring shows the market variant. Inside that, the week. Inside that, each individual seller as a wedge, with color layers showing their strategy proportions, sorted within each week by cheating proportion. Their final score sits in the gap between the seller wedges and the week ring.</p>
 
   <p>The part that made it actually useful: hover over any seller's wedge and everything else fades. The tooltip shows their player ID, their score, their strategy breakdown as a bar, and — at the bottom, in italics — exactly what they wrote in the exit survey. The chart answers all three questions simultaneously: you can read market-level patterns at a glance, track how strategy distributions shift across weeks, and drill into any individual to compare their data against their own explanation of it.</p>
+
+  <p>There is also a second layer of control: using the <em>Center strategy</em> button above the chart, you can rotate the sort order so that any of the four strategies sits at the centre of each seller wedge. This lets you instantly reframe the entire visual around whichever behaviour you want to study — switch to Cheating and the most fraudulent sellers cluster visually at the centre; switch to Honest High and the picture inverts. The same 161 sellers, reorganised in one click.</p>
 
   <span class="section-tag">The Observations</span>
   <h2>Patterns that only became visible once everything was in one place.</h2>
